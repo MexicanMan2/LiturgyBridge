@@ -99,6 +99,27 @@ Possible content:
 - attribution of sources
 - clear licensing information
 
+## Content Metadata and Licensing
+
+Every content item should carry metadata describing:
+
+- source
+- author or organization
+- language
+- version
+- license information
+- approval status
+
+This applies to:
+
+- liturgical texts
+- translations
+- hymn resources
+- educational materials
+- media files
+
+Content management must respect different ownership models.
+
 ---
 
 # 3. Service Management
@@ -219,6 +240,19 @@ Community
 |
 +-- Documents
 
+## Data Ownership
+
+Community content is logically separated from global platform content.
+
+Examples of community-owned data:
+
+- member information
+- internal documents
+- photos
+- group resources
+- announcements
+
+Communities control access permissions for their own content.
 
 ---
 
@@ -279,16 +313,22 @@ Possible environments:
 
 ---
 
-# 9. Privacy and Security
+# 9. Privacy, Security and Ownership
 
 ## Principles
 
 - communities control their own data
-- least privilege permissions
-- separation of technical and community administration
-- privacy-first design
+- users control their personal information
+- content ownership is preserved
+- permissions follow responsibilities
 
-Sensitive community content must not automatically be accessible by platform operators.
+Technical administrators should not automatically have access to private community content.
+
+The architecture must support separation between:
+
+- public liturgical resources
+- community-owned resources
+- personal user data
 
 ---
 
