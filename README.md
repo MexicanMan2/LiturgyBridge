@@ -8,6 +8,19 @@ The project combines structured liturgical texts, multilingual presentation, syn
 
 ---
 
+## Documentation
+
+The project documentation describes the vision, concepts, architecture, and roadmap.
+
+- [Vision](docs/01-vision.md)
+- [Project Concept](docs/02-project-concept.md)
+- [User Roles](docs/03-user-roles.md)
+- [Data Model](docs/04-data-model.md)
+- [Architecture](docs/05-architecture.md)
+- [Roadmap](docs/06-roadmap.md)
+
+---
+
 ## Vision
 
 Orthodox worship has been preserved for centuries through rich liturgical traditions and languages such as Church Slavonic, Greek, Arabic, and others.
@@ -67,3 +80,5 @@ Apache License 2.0
 
 Liturgical content:
 Licensing may vary depending on source and translation.
+
+
