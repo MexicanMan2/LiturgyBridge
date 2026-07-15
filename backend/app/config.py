@@ -37,6 +37,8 @@ class Settings:
     GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
     ANTHROPIC_API_KEY: Optional[str] = os.getenv("ANTHROPIC_API_KEY")
     DEEPL_API_KEY: Optional[str] = os.getenv("DEEPL_API_KEY")
+    TTS_PROVIDER: str = os.getenv("TTS_PROVIDER", "openai")
+    OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
 
 # Instantiate settings singleton
 settings = Settings()

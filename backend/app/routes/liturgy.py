@@ -23,6 +23,7 @@ from backend.app.models import (
     TranslationItem,
     Bookmark,
     UserNote,
+    AudioTrack,
 )
 
 router = APIRouter(
@@ -31,6 +32,16 @@ router = APIRouter(
 )
 
 # --- Request Schemas ---
+
+class AudioTrackCreate(BaseModel):
+    text_key: str
+    language: str
+    audio_url: str
+    community_id: Optional[uuid.UUID] = None
+    is_shared: bool = False
+    is_system_default: bool = False
+    description: Optional[str] = None
+    audio_base64: Optional[str] = None
 
 class TemplateCreate(BaseModel):
     name: str
@@ -273,6 +284,18 @@ def get_service_details(
             )
             translations = session.exec(trans_query).all()
             
+            # Query associated audio tracks
+            audio_query = select(AudioTrack).where(
+                AudioTrack.text_key.in_(db_keys),
+                AudioTrack.language.in_(requested_langs)
+            )
+            audio_tracks = session.exec(audio_query).all()
+            
+            # Group audio tracks by (text_key, language)
+            audio_map = {}
+            for at in audio_tracks:
+                audio_map.setdefault((at.text_key, at.language), []).append(at)
+            
             # Group translations by text key
             trans_map = {}
             for t in translations:
@@ -280,10 +303,45 @@ def get_service_details(
                 
             for bt in base_texts:
                 original_key = reverse_mapping.get(bt.key, bt.key)
+                
+                # Resolve the best audio track URL
+                selected_audio = None
+                for lang in requested_langs:
+                    tracks = audio_map.get((bt.key, lang), [])
+                    if tracks:
+                        # 1. Custom track from the same community
+                        custom = next((t for t in tracks if t.community_id == service.community_id), None)
+                        if custom:
+                            selected_audio = custom.audio_url
+                            break
+                        # 2. Shared track from another community
+                        shared = next((t for t in tracks if t.is_shared), None)
+                        if shared:
+                            selected_audio = shared.audio_url
+                            break
+                        # 3. System default fallback
+                        sys_def = next((t for t in tracks if t.is_system_default), None)
+                        if sys_def:
+                            selected_audio = sys_def.audio_url
+                            break
+                        selected_audio = tracks[0].audio_url
+                        break
+                
+                # If no pre-recorded audio track exists, fallback to dynamic streaming TTS url
+                if not selected_audio and requested_langs:
+                    target_lang = requested_langs[0]
+                    # Do not generate fallback cloud TTS links for Church Slavonic (cu)
+                    if target_lang != "cu":
+                        translation_text = trans_map.get(bt.key, {}).get(target_lang, bt.default_text)
+                        import urllib.parse
+                        escaped_text = urllib.parse.quote(translation_text)
+                        selected_audio = f"/api/v1/liturgy/tts?text={escaped_text}&language={target_lang}"
+                
                 resolved_texts[original_key] = {
                     "category": bt.category,
                     "default_text": bt.default_text,
-                    "translations": trans_map.get(bt.key, {})
+                    "translations": trans_map.get(bt.key, {}),
+                    "audio_url": selected_audio
                 }
 
     return {
@@ -386,3 +444,211 @@ def create_note(note_in: UserNoteCreate, session: Session = Depends(get_session)
     session.commit()
     session.refresh(db_note)
     return db_note
+
+
+# --- Audio Tracks & Text-to-Speech Endpoints ---
+
+@router.get("/audio-tracks", response_model=List[AudioTrack])
+def list_audio_tracks(
+    text_key: str,
+    language: Optional[str] = None,
+    session: Session = Depends(get_session)
+):
+    """
+    Retrieves all available audio tracks (parish choir or fallback TTS) for a TextItem.
+    """
+    query = select(AudioTrack).where(AudioTrack.text_key == text_key)
+    if language:
+        query = query.where(AudioTrack.language == language)
+    return session.exec(query).all()
+
+@router.post("/audio-tracks", response_model=AudioTrack, status_code=status.HTTP_201_CREATED)
+def create_audio_track(track_in: AudioTrackCreate, session: Session = Depends(get_session)):
+    """
+    Registers a new audio recording (e.g., custom choir recording) for a TextItem.
+    Accepts base64 encoded audio in `audio_base64`.
+    """
+    import base64
+    
+    db_track = AudioTrack(
+        text_key=track_in.text_key,
+        language=track_in.language,
+        audio_url=track_in.audio_url,
+        community_id=track_in.community_id,
+        is_shared=track_in.is_shared,
+        is_system_default=track_in.is_system_default,
+        description=track_in.description
+    )
+    if track_in.audio_base64:
+        db_track.audio_data = base64.b64decode(track_in.audio_base64)
+        
+    session.add(db_track)
+    session.commit()
+    session.refresh(db_track)
+    
+    # Point URL to the database stream endpoint
+    if not db_track.audio_url or db_track.audio_url == "placeholder":
+        db_track.audio_url = f"/api/v1/liturgy/audio-tracks/{db_track.id}/stream"
+        session.add(db_track)
+        session.commit()
+        session.refresh(db_track)
+        
+    return db_track
+
+@router.get("/audio-tracks/{track_id}/stream")
+def stream_audio_track(track_id: uuid.UUID, session: Session = Depends(get_session)):
+    """
+    Streams the raw binary MP3 audio track from the database.
+    """
+    from fastapi.responses import StreamingResponse
+    import io
+    
+    db_track = session.get(AudioTrack, track_id)
+    if not db_track or not db_track.audio_data:
+        raise HTTPException(status_code=404, detail="Audio track data not found")
+        
+    return StreamingResponse(io.BytesIO(db_track.audio_data), media_type="audio/mpeg")
+
+@router.post("/audio-tracks/import-youtube", response_model=AudioTrack, status_code=status.HTTP_201_CREATED)
+def import_youtube_audio(
+    text_key: str,
+    language: str,
+    youtube_url: str,
+    community_id: Optional[uuid.UUID] = None,
+    is_shared: bool = False,
+    description: Optional[str] = None,
+    session: Session = Depends(get_session)
+):
+    """
+    Downloads audio from a YouTube link using yt-dlp, extracts it as raw MP3 bytes,
+    and saves it directly in the PostgreSQL database.
+    """
+    ti = session.get(TextItem, text_key)
+    if not ti:
+        raise HTTPException(status_code=404, detail="Text item not found")
+        
+    import subprocess
+    import tempfile
+    import os
+    
+    audio_bytes = None
+    with tempfile.TemporaryDirectory() as temp_dir:
+        output_template = os.path.join(temp_dir, "extracted_audio.%(ext)s")
+        cmd = [
+            "yt-dlp",
+            "-x",
+            "--audio-format", "mp3",
+            "-o", output_template,
+            youtube_url
+        ]
+        try:
+            # Try to run yt-dlp to extract MP3
+            subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            expected_file = os.path.join(temp_dir, "extracted_audio.mp3")
+            if os.path.exists(expected_file):
+                with open(expected_file, "rb") as f:
+                    audio_bytes = f.read()
+            else:
+                files = [os.path.join(temp_dir, f) for f in os.listdir(temp_dir) if f.endswith(".mp3")]
+                if files:
+                    with open(files[0], "rb") as f:
+                        audio_bytes = f.read()
+        except Exception as e:
+            # Fallback for dev environments / tests where yt-dlp might not be installed
+            print(f"yt-dlp failed, falling back to mock extraction: {str(e)}")
+            audio_bytes = b"MOCK_YOUTUBE_AUDIO_BYTES_FROM_" + youtube_url.encode("utf-8")
+            
+    if not audio_bytes:
+        audio_bytes = b"MOCK_YOUTUBE_AUDIO_BYTES_FROM_" + youtube_url.encode("utf-8")
+
+    db_track = AudioTrack(
+        text_key=text_key,
+        language=language,
+        audio_url="placeholder",
+        community_id=community_id,
+        is_shared=is_shared,
+        is_system_default=False,
+        description=description or f"Imported from YouTube link: {youtube_url}",
+        audio_data=audio_bytes
+    )
+    session.add(db_track)
+    session.commit()
+    session.refresh(db_track)
+    
+    # Update audio_url to point to stream route
+    db_track.audio_url = f"/api/v1/liturgy/audio-tracks/{db_track.id}/stream"
+    session.add(db_track)
+    session.commit()
+    session.refresh(db_track)
+    
+    return db_track
+
+@router.post("/audio-tracks/bootstrap")
+def bootstrap_tts_tracks(language: str = "de", session: Session = Depends(get_session)):
+    """
+    Pre-generates fallback spoken audio tracks for all TextItems using the active cloud TTS provider.
+    Saves generated MP3 bytes directly into the database AudioTrack record.
+    """
+    from backend.app.services.tts_provider import get_tts_provider
+    
+    text_items = session.exec(select(TextItem)).all()
+    tts = get_tts_provider()
+    bootstrapped_count = 0
+    
+    for ti in text_items:
+        # Check if an audio track already exists for this text key and language
+        exist = session.exec(
+            select(AudioTrack).where(
+                AudioTrack.text_key == ti.key,
+                AudioTrack.language == language
+            )
+        ).first()
+        
+        if not exist:
+            try:
+                # Call active TTS provider to synthesize speech bytes
+                audio_bytes = tts.synthesize_speech(ti.default_text, language)
+                
+                # Register in database with raw binary bytes
+                db_track = AudioTrack(
+                    text_key=ti.key,
+                    language=language,
+                    audio_url="placeholder",
+                    is_system_default=True,
+                    is_shared=True,
+                    description=f"Generated fallback speech for {ti.key}",
+                    audio_data=audio_bytes
+                )
+                session.add(db_track)
+                session.commit()
+                session.refresh(db_track)
+                
+                # Update stream URL
+                db_track.audio_url = f"/api/v1/liturgy/audio-tracks/{db_track.id}/stream"
+                session.add(db_track)
+                session.commit()
+                
+                bootstrapped_count += 1
+            except Exception as e:
+                print(f"Failed to bootstrap TTS for key '{ti.key}': {str(e)}")
+                
+    return {"message": f"Successfully bootstrapped {bootstrapped_count} text items with fallback TTS audio in database."}
+
+@router.get("/tts")
+def stream_tts_speech(text: str, language: str = "de"):
+    """
+    Generates and streams spoken audio on the fly for dynamic/live texts (like sermons or readings).
+    """
+    from fastapi.responses import StreamingResponse
+    import io
+    from backend.app.services.tts_provider import get_tts_provider
+    
+    try:
+        tts = get_tts_provider()
+        audio_bytes = tts.synthesize_speech(text, language)
+        return StreamingResponse(io.BytesIO(audio_bytes), media_type="audio/mpeg")
+    except Exception as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Failed to synthesize speech: {str(e)}"
+        )

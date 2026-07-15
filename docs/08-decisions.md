@@ -421,6 +421,56 @@ An AI chatbot provides a welcoming, interactive interface for visitors to unders
 
 ---
 
+# Decision 024 - Audio Accessibility and Simultaneous Translation
+
+## Decision
+
+LiturgyBridge will support simultaneous translation via audio guides. Visitors can listen to the translated liturgy in their preferred language using headphones. The application will synchronize the audio track playback with the active liturgy section controlled by the priest. 
+
+## Reason
+
+Many churchgoers prefer not to look at their phone screens during a worship service. An audio track allows visitors to follow the service meditatively while keeping their eyes on the altar and iconostasis.
+
+---
+
+# Decision 025 - Cloud-Based Text-to-Speech (TTS) Integration
+
+## Decision
+
+The application will integrate cloud-based Text-to-Speech (TTS) services to generate high-quality neural voices. We will abstract the TTS API calls (supporting Google Cloud TTS and OpenAI TTS) in the backend services layer. For dynamic/custom texts (like the priest's sermon or the daily scripture readings), the backend will call the active cloud TTS provider dynamically and stream the synthesized audio back to the client.
+
+## Reason
+
+Built-in browser voices (Web Speech API) are highly robotic and inconsistent across different devices. Using neural, human-sounding cloud voices provides a professional, reverent liturgical experience.
+
+---
+
+# Decision 026 - Parish Audio Sharing and Choral Track Marketplace
+
+## Decision
+
+LiturgyBridge will introduce an `AudioTrack` model to store multiple recorded and shared audio versions of liturgical prayers. Parishes can upload high-quality audio files of their own choir singing standard prayers in their language (e.g. German Byzantine chants). If a parish marks a track as shared (`is_shared = True`), it becomes globally available in the database, allowing any other parish to adopt and play it during their services. The system will use cloud TTS to generate default spoken fallback tracks (marked as `is_system_default`) to guarantee 100% audio coverage immediately.
+
+## Reason
+
+Orthodox worship is almost exclusively sung or chanted. Standard spoken TTS cannot capture the beauty of liturgical choral music. Allowing parishes to upload, share, and cross-adopt real choir recordings creates a collaborative community marketplace while maintaining a fallback system.
+
+---
+
+# Decision 027 - Database-Stored Audio Blobs & Nextcloud Integration Path
+
+## Decision
+
+Audio tracks (MP3 data generated via TTS or uploaded by parishes) will be stored directly inside the PostgreSQL database as binary data (`LargeBinary` / BLOB) on the `AudioTrack` table. The backend will expose a streaming endpoint `/api/v1/liturgy/audio-tracks/{track_id}/stream` to serve the raw audio files. 
+
+For future scaling, the storage engine will be abstracted so that audio files can be transparently routed to an external Nextcloud instance (via WebDAV API), while keeping the public streaming route and database metadata schema unchanged.
+
+## Reason
+
+Storing files directly in the database ensures the application is 100% self-contained and state-free, avoiding container file storage persistence and synchronization issues in Docker environments. Designing it with an abstract stream route ensures we can easily swap backend storage to Nextcloud in the future without breaking any client app code.
+
+---
+
 # Future Decisions
 
 Future decisions should be documented when they affect:

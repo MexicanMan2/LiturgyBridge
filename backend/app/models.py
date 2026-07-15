@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
-from sqlalchemy import Column, JSON
+from sqlalchemy import Column, JSON, LargeBinary
 from sqlmodel import Field, Relationship, SQLModel
 
 class Membership(SQLModel, table=True):
@@ -117,6 +117,7 @@ class TextItem(SQLModel, table=True):
     # Relationships
     translations: List["TranslationItem"] = Relationship(back_populates="text_item")
     notes: List["UserNote"] = Relationship(back_populates="text_item")
+    audio_tracks: List["AudioTrack"] = Relationship(back_populates="text_item")
 
 class TranslationItem(SQLModel, table=True):
     """
@@ -212,3 +213,22 @@ class WikiTranslation(SQLModel, table=True):
 
     # Relationships
     article: WikiArticle = Relationship(back_populates="translations")
+
+class AudioTrack(SQLModel, table=True):
+    """
+    Stores an audio recording (choir chant or generated TTS) for a TextItem.
+    """
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+    text_key: str = Field(foreign_key="textitem.key")
+    language: str  # e.g., "de", "cu", "el"
+    audio_url: str  # path or URL to the audio file
+    audio_data: Optional[bytes] = Field(default=None, sa_column=Column(LargeBinary, nullable=True))
+    community_id: Optional[uuid.UUID] = Field(default=None, foreign_key="community.id", nullable=True)
+    is_shared: bool = Field(default=False)
+    is_system_default: bool = Field(default=False)
+    description: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    text_item: TextItem = Relationship(back_populates="audio_tracks")
+    community: Optional[Community] = Relationship()
