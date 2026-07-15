@@ -57,6 +57,15 @@ class LiturgicalTemplate(SQLModel, table=True):
     name: str
     tradition: str  # e.g., "Byzantine", "Slavic"
     structure: Dict[str, Any] = Field(default={}, sa_column=Column(JSON))
+    
+    # Ownership and sharing settings
+    community_id: Optional[uuid.UUID] = Field(default=None, foreign_key="community.id", nullable=True)
+    author_id: Optional[uuid.UUID] = Field(default=None, foreign_key="user.id", nullable=True)
+    is_shared: bool = Field(default=False)
+
+    # Relationships
+    author: Optional["User"] = Relationship()
+    community: Optional["Community"] = Relationship()
 
 class LiturgicalService(SQLModel, table=True):
     """
