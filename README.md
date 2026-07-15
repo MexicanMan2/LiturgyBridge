@@ -14,10 +14,14 @@ The project documentation describes the vision, concepts, architecture, and road
 
 - [Vision](docs/01-vision.md)
 - [Project Concept](docs/02-project-concept.md)
-- [User Roles](docs/03-user-roles.md)
-- [Data Model](docs/04-data-model.md)
-- [Architecture](docs/05-architecture.md)
-- [Roadmap](docs/06-roadmap.md)
+- [Community Concept](docs/03-community-concept.md)
+- [User Roles](docs/04-user-roles.md)
+- [Data Model](docs/05-data-model.md)
+- [Architecture](docs/06-architecture.md)
+- [Roadmap](docs/07-roadmap.md)
+- [Project Decisions](docs/08-decisions.md)
+- [Licensing Guidelines](docs/09-licensing.md)
+- [Technical Q&A / FAQ](docs/10-technical-notes-faq.md)
 
 ---
 
