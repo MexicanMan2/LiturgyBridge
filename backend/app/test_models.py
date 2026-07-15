@@ -17,8 +17,11 @@ from backend.app.models import (
 )
 
 def test_liturgy_bridge_models():
-    # 1. Setup in-memory database
-    engine = create_engine("sqlite:///:memory:")
+    # 1. Setup PostgreSQL database (using config DATABASE_URL engine)
+    from backend.app.database import engine
+    
+    # Drop and recreate tables to ensure a clean schema state
+    SQLModel.metadata.drop_all(engine)
     SQLModel.metadata.create_all(engine)
 
     with Session(engine) as session:

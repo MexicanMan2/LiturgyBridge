@@ -11,7 +11,15 @@ from backend.app.config import settings
 # Initialize database engine
 # echo=True prints raw SQL logs - useful for development debugging
 echo_logs = settings.ENV == "development"
-engine = create_engine(settings.DATABASE_URL, echo=echo_logs)
+
+# PostgreSQL connection pooling settings to handle concurrent requests
+engine = create_engine(
+    settings.DATABASE_URL,
+    echo=echo_logs,
+    pool_size=20,          # Maintain up to 20 persistent connections
+    max_overflow=10,       # Allow up to 10 additional temporary overflow connections
+    pool_recycle=3600,     # Recycle connections older than 1 hour to prevent stale handles
+)
 
 def create_db_and_tables():
     """

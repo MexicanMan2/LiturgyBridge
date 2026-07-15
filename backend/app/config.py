@@ -7,9 +7,11 @@ Single Sign-On (SSO) clients, external AI APIs, and local server base URLs.
 """
 
 from typing import Optional
-# Note: In production we can use BaseSettings from pydantic_settings
-# For the skeleton, we define a standard class loaded from environment variables.
 import os
+from dotenv import load_dotenv
+
+# Load local environment variables from .env if present
+load_dotenv()
 
 class Settings:
     # 1. Server Configuration

@@ -382,6 +382,18 @@ Vue.js offers a gentle learning curve for Python developers due to its clean sep
 
 ---
 
+# Decision 021 - Database Security and Network Isolation
+
+## Decision
+
+LiturgyBridge will enforce database security using environment-based credentials (stored in local `.env` files ignored by Git) coupled with private Docker network isolation. The PostgreSQL database port (5432) will not be exposed to the public internet in production; only the FastAPI backend container will have access to the database container within an isolated bridge network.
+
+## Reason
+
+Hardcoding default database credentials or exposing database ports to the public internet presents severe security risks. By isolating the database container within a private virtual network and mapping the port only to `127.0.0.1` locally (for development), we ensure that the database is completely inaccessible from the outside world. Using environment variables dynamically loaded by both Docker and Python ensures that credentials can be easily customized and rotated in production without code changes.
+
+---
+
 # Future Decisions
 
 Future decisions should be documented when they affect:
