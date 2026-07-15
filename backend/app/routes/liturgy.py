@@ -232,16 +232,43 @@ def get_service_details(
     resolved_texts = {}
     if languages and template:
         requested_langs = [l.strip() for l in languages.split(",") if l.strip()]
-        keys = extract_text_keys(template.structure)
         
-        if keys:
+        # Calculate calendar parameters based on service schedule date
+        from backend.app.services.liturgical_calendar import get_liturgical_day_info
+        cal_info = get_liturgical_day_info(service.scheduled_time)
+        tone = cal_info["tone"]
+        
+        raw_keys = extract_text_keys(template.structure)
+        
+        # Define mappings from placeholder keys to actual resolved database keys
+        placeholder_mapping = {
+            "dynamic.tonal_troparion": f"oktoechos.tone_{tone}.troparion",
+            "dynamic.tonal_kontakion": f"oktoechos.tone_{tone}.kontakion",
+            "dynamic.tonal_prokeimenon": f"oktoechos.tone_{tone}.prokeimenon",
+            "dynamic.epistle_reading": f"scripture.epistle.{cal_info['epistle_ref']}",
+            "dynamic.gospel_reading": f"scripture.gospel.{cal_info['gospel_ref']}"
+        }
+        
+        # Map raw keys to db lookup keys
+        db_keys = []
+        reverse_mapping = {}
+        for rk in raw_keys:
+            if rk in placeholder_mapping:
+                mapped_key = placeholder_mapping[rk]
+                db_keys.append(mapped_key)
+                reverse_mapping[mapped_key] = rk
+            else:
+                db_keys.append(rk)
+                reverse_mapping[rk] = rk
+        
+        if db_keys:
             # Query base texts
-            texts_query = select(TextItem).where(TextItem.key.in_(keys))
+            texts_query = select(TextItem).where(TextItem.key.in_(db_keys))
             base_texts = session.exec(texts_query).all()
             
             # Query translations
             trans_query = select(TranslationItem).where(
-                TranslationItem.text_key.in_(keys),
+                TranslationItem.text_key.in_(db_keys),
                 TranslationItem.language.in_(requested_langs)
             )
             translations = session.exec(trans_query).all()
@@ -252,7 +279,8 @@ def get_service_details(
                 trans_map.setdefault(t.text_key, {})[t.language] = t.translation_text
                 
             for bt in base_texts:
-                resolved_texts[bt.key] = {
+                original_key = reverse_mapping.get(bt.key, bt.key)
+                resolved_texts[original_key] = {
                     "category": bt.category,
                     "default_text": bt.default_text,
                     "translations": trans_map.get(bt.key, {})

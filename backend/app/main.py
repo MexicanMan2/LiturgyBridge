@@ -40,13 +40,14 @@ app.add_middleware(
 )
 
 # Import Routers
-from backend.app.routes import auth, community, liturgy, sync
+from backend.app.routes import auth, community, liturgy, sync, wiki
 
 # Include Routers with API prefix
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(community.router, prefix="/api/v1")
 app.include_router(liturgy.router, prefix="/api/v1")
 app.include_router(sync.router, prefix="/api/v1")
+app.include_router(wiki.router, prefix="/api/v1")
 
 # Root endpoint
 @app.get("/")

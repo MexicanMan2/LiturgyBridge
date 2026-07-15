@@ -394,6 +394,33 @@ Hardcoding default database credentials or exposing database ports to the public
 
 ---
 
+# Decision 022 - Dynamic Liturgical Calendar and Texts Resolution
+
+## Decision
+
+LiturgyBridge will resolve the variable components of liturgical services (propria, such as scripture readings, Troparia, Kontakia, and weekly Tones) dynamically at runtime. The system will calculate the liturgical day based on the scheduled date using Orthodox calendar algorithms (Julian/Gregorian conversions and Pascha cycles). Templates will reference placeholders (e.g., `dynamic.tonal_troparion`) that are replaced by concrete database text keys (e.g., `oktoechos.tone_4.troparion`) on retrieval.
+
+## Reason
+
+Hardcoding all possible daily text permutations into service templates is unmanageable. Calculating the Tone cycle and readings programmatically keeps templates reusable, lightweight, and database-driven.
+
+---
+
+# Decision 023 - LiturgyWiki and AI Chatbot Companion with Cost Control
+
+## Decision
+
+The application will integrate an educational LiturgyWiki for terms lookups, and a Gemini-powered AI Liturgical Chatbot companion (`/api/v1/wiki/chat`) to explain services dynamically to visitors. To prevent API abuse and control token costs:
+1. The backend will intercept and answer standard terminology queries directly using local Wiki articles before calling the Gemini API.
+2. The system will apply IP/session rate limiting.
+3. The context payload sent to Gemini will be truncated to the active liturgy segment and relevant wiki snippets.
+
+## Reason
+
+An AI chatbot provides a welcoming, interactive interface for visitors to understand Orthodox worship. Combining it with local Wiki-first interception and rate limits ensures the solution remains cost-effective (free or negligible operational cost) and safe from request floods.
+
+---
+
 # Future Decisions
 
 Future decisions should be documented when they affect:

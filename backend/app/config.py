@@ -33,7 +33,9 @@ class Settings:
     CHURCHTOOLS_API_KEY: Optional[str] = os.getenv("CHURCHTOOLS_API_KEY")
 
     # 4. Translation & AI APIs
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "gemini")
     GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY")
+    ANTHROPIC_API_KEY: Optional[str] = os.getenv("ANTHROPIC_API_KEY")
     DEEPL_API_KEY: Optional[str] = os.getenv("DEEPL_API_KEY")
 
 # Instantiate settings singleton

@@ -186,3 +186,29 @@ class UserNote(SQLModel, table=True):
     # Relationships
     user: User = Relationship(back_populates="notes")
     text_item: TextItem = Relationship(back_populates="notes")
+
+class WikiArticle(SQLModel, table=True):
+    """
+    Stores metadata for LiturgyWiki articles explaining terms or structures.
+    """
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+    slug: str = Field(unique=True, index=True)
+    category: str  # e.g., "terminology", "structure", "customs"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    translations: List["WikiTranslation"] = Relationship(back_populates="article")
+
+class WikiTranslation(SQLModel, table=True):
+    """
+    Stores localized translations for a WikiArticle.
+    """
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
+    article_id: uuid.UUID = Field(foreign_key="wikiarticle.id")
+    language: str  # e.g. "de", "en", "el"
+    title: str
+    content: str  # Markdown formatted text body
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    article: WikiArticle = Relationship(back_populates="translations")
