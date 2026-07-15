@@ -227,3 +227,61 @@ Stores private notes or annotations written by a user for a specific `TextItem`.
 - **Content:** String
 - **Created At:** DateTime (Timezone-aware)
 - **Updated At:** DateTime (Timezone-aware)
+
+---
+
+# 13. WikiArticle
+
+## Description
+
+Stores metadata for LiturgyWiki articles explaining liturgical terms, structures, or customs.
+
+## Attributes
+
+- **Article ID:** UUID (Primary Key)
+- **Slug:** String (Unique, Indexed, e.g. `"troparion"`)
+- **Category:** String (e.g. `"terminology"`, `"structure"`, `"customs"`)
+- **Created At:** DateTime (Timezone-aware)
+
+## Relationships
+
+- **Translations:** Has many `WikiTranslation` records.
+
+---
+
+# 14. WikiTranslation
+
+## Description
+
+Stores localized translation bodies for a specific `WikiArticle`.
+
+## Attributes
+
+- **Translation ID:** UUID (Primary Key)
+- **Article ID:** UUID (Foreign Key to WikiArticle)
+- **Language:** String (e.g. `"de"`, `"en"`, `"el"`)
+- **Title:** String
+- **Content:** String (Markdown-formatted text body)
+- **Updated At:** DateTime (Timezone-aware)
+
+---
+
+# 15. AudioTrack
+
+## Description
+
+Stores an audio recording (parish choir recording or generated fallback TTS) associated with a `TextItem` key.
+
+## Attributes
+
+- **Track ID:** UUID (Primary Key)
+- **Text Key:** String (Foreign Key to TextItem)
+- **Language:** String (e.g., `"de"`, `"cu"`, `"el"`)
+- **Audio URL:** String (Public streaming path, e.g. `/api/v1/liturgy/audio-tracks/{id}/stream`)
+- **Audio Data:** Binary (MP3/WAV bytes stored directly as a database BLOB)
+- **Community ID:** UUID (Optional, Foreign Key to Community. Null if system default)
+- **Is Shared:** Boolean (If True, allows other parishes to adopt this track)
+- **Is System Default:** Boolean (True if generated as fallback speech via TTS)
+- **Description:** String (e.g., "Byzantine Chant - Holy Trinity Choir")
+- **Created At:** DateTime (Timezone-aware)
+

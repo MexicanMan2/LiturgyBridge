@@ -237,11 +237,12 @@ Examples:
 
 Possible technologies:
 
-- speech-to-text
-- machine translation
-- text-to-speech
+- **AI Chatbot Interface (`LLMProvider`):** An abstracted Strategy Pattern interface that decouples the backend chatbot controller from specific LLM providers. Supports hot-swapping between Google Gemini and Anthropic Claude via environment variables, utilizing a Mock engine for test runs. Includes local Wiki-first interception for terminology lookups to prevent API costs.
+- **Audio Translations (`TTSProvider`):** An abstracted Strategy Pattern interface for neural speech synthesis. Supports Google Cloud TTS, OpenAI TTS, and Mock providers to read translated sermons and readings in the listener's headphones.
+- **Database BLOB Audio Streaming:** Raw audio bytes (MP3) are stored directly inside the PostgreSQL database (`BYTEA` column) to maintain state-free application hosting. The backend serves them via a unified streaming route (`/api/v1/liturgy/audio-tracks/{id}/stream`), which is architected to allow transparent redirection to Nextcloud WebDAV storage in future phases without client changes.
+- **YouTube Audio Importer:** A backend service that uses `yt-dlp` to extract MP3 audio streams from YouTube links (e.g. parish choir recordings) and registers them as database BLOBs.
 
-External AI services should remain replaceable.
+External AI and media storage services remain fully replaceable.
 
 ---
 

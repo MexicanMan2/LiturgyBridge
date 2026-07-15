@@ -28,7 +28,7 @@ Create a clear foundation for the project.
 
 Status:
 
-🚧 Current phase
+✅ Completed
 
 ---
 
@@ -58,6 +58,8 @@ Outcome:
 
 Users can read and compare liturgical texts digitally.
 
+Status: ✅ Completed
+
 ---
 
 # Phase 2 – Service Companion
@@ -77,6 +79,8 @@ Help visitors follow a live service.
 Example:
 
 A visitor enters a church, scans a QR code, selects German, and follows the current service section.
+
+Status: ✅ Completed
 
 ---
 
@@ -101,6 +105,8 @@ Possible technologies:
 - local WiFi deployment
 
 Human control remains available.
+
+Status: ✅ Completed
 
 ---
 
@@ -129,6 +135,8 @@ Possible assistance:
 - machine translation
 - text-to-speech
 
+Status: ✅ Completed
+
 ---
 
 # Phase 5 – Integration Connectors
@@ -153,6 +161,8 @@ Storage Connection:
 
 Notification Router:
 - Dispatch schedule updates and announcements to Telegram channels, Signal groups, or WhatsApp chat bots using simple webhooks.
+
+Status: 🚧 Current phase
 
 ---
 
