@@ -26,63 +26,44 @@ Users can join multiple communities.
 
 ## Community features
 
-### Calendar
+### Calendar Integration
 
-Communities can publish:
+Rather than managing a separate database of calendar events, LiturgyBridge integrates with existing calendars:
 
-- services
-- feast days
-- meetings
-- rehearsals
-- special events
+- Import gottesdienst schedules and events via standard **iCal/ICS feeds** or APIs (e.g., ChurchTools, Google Calendar).
+- Link imported calendar events with liturgical templates inside LiturgyBridge.
 
 ---
 
-### Notifications
+### Notification Routing
 
-Users can receive notifications about:
+Instead of developing an independent notification inbox and push service, LiturgyBridge utilizes popular messaging platforms:
 
-- schedule changes
-- upcoming services
-- announcements
-- community news
+- Configure webhooks to automatically post announcements (e.g., service schedule changes, feast day updates) to **Telegram channels, Signal groups, or WhatsApp**.
+- Optional email notification relays.
 
 ---
 
-### Shared resources
+### External Resource Storage
 
-Communities can create groups with controlled access.
+LiturgyBridge acts as a viewer and portal for files stored on existing community storage platforms:
 
-Examples:
-
-Choir:
-- sheet music
-- lyrics
-- rehearsal recordings
-
-Youth group:
-- photos
-- documents
-- announcements
-
-Parish events:
-- pictures
-- invitations
-- materials
+- Integrate with **Nextcloud, WebDAV, or Google Drive** folders.
+- Display relevant resources contextually (e.g., choir folders displaying sheet music and lyrics directly linked to the current service sections).
+- Avoids the security and storage overhead of self-hosting private files.
 
 ---
 
-## Privacy principles
+## Privacy and Access Control
 
-Community content must be separated from public project content.
+Community integrations must respect privacy boundaries:
 
-Users control:
-- which communities they join
-- what notifications they receive
-- which groups they access
+- **Single Sign-On (SSO):** Authenticate users using existing community logins (OpenID Connect / OAuth2 via Nextcloud, ChurchTools, or other directory services).
+- **Access Delegation:** Permissions to view group-specific files are delegated to the underlying storage provider (e.g., Nextcloud permissions determine who sees choir notes).
+- Personal data is kept minimal, storing only external identifiers.
 
 ---
 
 ## Long-term goal
 
-Provide communities with a dedicated digital space that respects privacy and replaces scattered communication through unrelated platforms.
+Provide communities with a seamless integration bridge that connects the liturgical companion with their existing digital infrastructure (calendars, cloud storages, and chat channels), preventing data duplication and reducing system complexity.

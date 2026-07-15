@@ -317,6 +317,71 @@ The liturgy is the foundation, and community life grows from it.
 
 ---
 
+# Decision 016 - Integration-First Community Approach
+
+## Decision
+
+Instead of developing a full-featured, self-hosted community platform containing calendar database structures, messaging/chat interfaces, and private file hosting, LiturgyBridge utilizes an integration-first approach. It connects to existing tools (e.g., ChurchTools, Nextcloud, WebDAV, Telegram, Signal) via standard APIs, iCal feeds, and SSO/OIDC.
+
+## Reason
+
+A custom full-stack community management platform significantly increases scope, hosting requirements (storage/security for private documents), and user adoption friction. Integrating with existing tools:
+
+- Prevents data duplication (parishes keep using their existing calendar/member databases).
+- Minimizes security and legal overhead (private documents are hosted on the parish's Nextcloud instance, not LiturgyBridge).
+- Keeps the core LiturgyBridge application lean, highly performant, and easy to host (even on a local Raspberry Pi in offline scenarios).
+- Lowers adoption barriers for parishes that already have digital infrastructure.
+
+---
+
+# Decision 017 - Backend Language and Framework (Python & FastAPI)
+
+## Decision
+
+The backend of LiturgyBridge will be built using Python, utilizing the FastAPI web framework alongside SQLModel and Pydantic.
+
+## Reason
+
+Python is already a primary language for the core developers, ensuring high productivity and developer velocity. Furthermore, Python boasts the best ecosystem for future speech-to-text, machine translation, and AI capabilities (Phase 4). FastAPI provides native asynchronous execution, enabling high-performance WebSocket connections required by the synchronization engine, while SQLModel integrates Pydantic and SQLAlchemy for seamless data validation and database models.
+
+---
+
+# Decision 018 - Database System (PostgreSQL with JSONB)
+
+## Decision
+
+LiturgyBridge will use PostgreSQL as its primary database. It will employ a hybrid design: standard relational tables for structured models (Users, Communities, Services) combined with **JSONB** columns to store the deeply nested, hierarchical, and multilingual structures of liturgical texts.
+
+## Reason
+
+PostgreSQL is a robust, production-grade relational database with excellent JSONB querying capabilities. Liturgical texts are naturally hierarchical and multilingual (parallel translation trees), making standard relational normalization highly complex. Storing them as JSONB documents allows clean retrieval and flexible updates, while standard relations ensure integrity for user and configuration data.
+
+---
+
+# Decision 019 - API and Realtime Protocol (REST & WebSockets)
+
+## Decision
+
+The communications between client applications (visitor smartphones, admin portals) and the backend will be conducted using a hybrid API approach: a REST API for heavy static data retrieval, and WebSockets for real-time synchronization updates.
+
+## Reason
+
+REST is the industry standard for traditional request-response operations, such as loading static liturgical texts. WebSockets provide a persistent, low-overhead bi-directional channel ideal for pushing small, real-time synchronization packets (e.g., active section changes) to all connected clients during a worship service without overloading mobile data connections in churches.
+
+---
+
+# Decision 020 - Frontend Stack (Vue.js, Vite & TailwindCSS)
+
+## Decision
+
+The user interface of LiturgyBridge will be developed as a Single Page Application (SPA) using Vue.js, built with Vite, and styled using TailwindCSS.
+
+## Reason
+
+Vue.js offers a gentle learning curve for Python developers due to its clean separation of HTML, JS, and CSS within Single File Components (`.vue`). Combined with Vite, it provides extremely fast compilation and a rapid feedback loop. TailwindCSS allows rapid creation of custom, premium, responsive mobile layouts with dark mode optimization, while the SPA architecture allows wrapping the application using Capacitor for native Android/iOS distribution later.
+
+---
+
 # Future Decisions
 
 Future decisions should be documented when they affect:

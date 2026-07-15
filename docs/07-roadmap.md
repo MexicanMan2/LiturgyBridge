@@ -131,36 +131,28 @@ Possible assistance:
 
 ---
 
-# Phase 5 – Community Platform
+# Phase 5 – Integration Connectors
 
 ## Goal
 
-Provide digital infrastructure for Orthodox communities.
+Provide interfaces and adapters to connect LiturgyBridge with existing digital infrastructure of Orthodox parishes.
 
 ## Features
 
-Community spaces:
+SSO & Directory Sync:
+- Single Sign-On (OAuth2/OIDC) for parish members (via Nextcloud, ChurchTools).
+- Synchronize group memberships (e.g., choir lists) to define access permissions.
 
-- parish profiles
-- calendars
-- opening hours
-- events
-- announcements
+Calendar Adapter:
+- iCal/ICS feeds integration to fetch worship schedules from parish calendars.
+- Link local Liturgical Services to imported events automatically.
 
-Member features:
+Storage Connection:
+- Contextual folder mapping (Nextcloud/WebDAV) for shared assets (sheet music, rehearsal audios, documents).
+- File list visualization inside the web interface without hosting files locally.
 
-- notifications
-- groups
-- shared resources
-- documents
-- images
-
-Examples:
-
-- choir groups
-- youth groups
-- volunteers
-- education groups
+Notification Router:
+- Dispatch schedule updates and announcements to Telegram channels, Signal groups, or WhatsApp chat bots using simple webhooks.
 
 ---
 

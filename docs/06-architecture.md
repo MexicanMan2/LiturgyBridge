@@ -8,43 +8,58 @@ The architecture separates different domains to allow independent development, s
 
 The main architectural areas are:
 
-1. User and Community Platform
-2. Liturgical Content System
-3. Service Synchronization
+1. Liturgical Core & Text Library
+2. Service Synchronization Engine
+3. Integration Layer (Community Connectors)
 4. Translation and Language Services
 5. Web Applications
-6. Infrastructure and Data Management
+6. Infrastructure and Caching
 
 ---
 
 # High-Level Architecture
 
                 LiturgyBridge
-
-                     |
+                      |
     -----------------------------------
     |                |                |
-
-    Liturgical Community User Access
-Core Platform Layer
-
+Liturgical      Integration      User Access
+Core Layer      Layer (Connect)     Layer
     |                |                |
-    |                |                |
-
-    Text Library Communities Web Apps
-Translations Groups Mobile Browser
-Templates Events Admin Portal
-Sync Engine Resources Priest Portal
+Text Library    OIDC/SSO Sync    Web Apps
+Translations    Calendar Adapter Mobile Browser
+Templates       Storage Connect  Admin Portal
+Sync Engine     Msg Route Bot    Priest Portal
 
                      |
               Shared Services
-
                      |
     -----------------------------------
     |                |                |
-Identity       Notifications      Media Storage
+Identity       Notifications      Media Cache
 
 
+
+---
+
+# Technology Stack
+
+LiturgyBridge relies on a standardized, open-source technology stack designed for developer velocity, ease of maintenance, and reliable real-time performance.
+
+## Backend & API Layer
+- **Language:** Python
+- **Framework:** FastAPI (asynchronous, high-performance web framework)
+- **Database ORM:** SQLModel (integrating SQLAlchemy and Pydantic)
+- **Protocol:** REST API for static/heavy payload transfers + WebSockets for real-time synchronization updates.
+
+## Database Layer
+- **Database:** PostgreSQL
+- **Data Models:** Hybrid relational models (users, communities, services) combined with PostgreSQL **JSONB** columns for nesting hierarchical, multilingual liturgical texts.
+
+## Frontend Layer
+- **Framework:** Vue.js (Single Page Application, SPA)
+- **Build Tool:** Vite
+- **Styling:** TailwindCSS (for modern, highly responsive design)
 
 ---
 
@@ -209,50 +224,35 @@ External AI services should remain replaceable.
 
 ---
 
-# 6. Community Platform
+# 6. Integration Layer & Community Connectors
 
 ## Purpose
 
-Provides protected digital spaces for communities.
+Integrates LiturgyBridge with existing community infrastructure instead of self-hosting redundant data.
 
-Responsibilities:
+Connectors:
 
-- community profiles
-- membership
-- groups
-- calendars
-- announcements
-- notifications
-- shared resources
+- **Identity (OIDC/OAuth2):** Delegates authentication to community systems (e.g., Nextcloud, ChurchTools).
+- **Calendar (iCal/ICS):** Periodically pulls events from parish calendars, mapping them to Liturgical Services.
+- **Storage (Nextcloud/WebDAV):** Serves resource directories (like choir sheet music) directly from external cloud folders.
+- **Notification Router:** Relays platform announcements and schedule changes via external chat channels (Telegram, Signal, WhatsApp bots).
 
-Examples:
+Examples of integrated workflow:
 
-Community
-
-|
-+-- Choir Group
-|
-+-- Youth Group
-|
-+-- Volunteers
-|
-+-- Events
-|
-+-- Documents
+Parish Calendar (ChurchTools)
+       |
+       v (iCal Adapter)
+LiturgyBridge (Link template)
+       |
+       +--> Link to Nextcloud folder (Choir sheet music)
+       +--> Notify Telegram channel (Service started)
 
 ## Data Ownership
 
-Community content is logically separated from global platform content.
+LiturgyBridge does not store primary community files or user database directories. 
 
-Examples of community-owned data:
-
-- member information
-- internal documents
-- photos
-- group resources
-- announcements
-
-Communities control access permissions for their own content.
+- LiturgyBridge only retains minimal references (e.g., Nextcloud directory IDs, calendar event IDs, external user hashes).
+- Access control permissions and files remain under the ownership of the parish's external systems.
 
 ---
 
@@ -341,13 +341,13 @@ Example:
 LiturgyBridge
 
 ├── Web Applications
-├── API Layer
-├── User Management
-├── Community Module
+├── API Layer (GraphQL/REST)
+├── Auth Layer (OIDC/SSO)
 ├── Liturgical Engine
+├── Integration Adapters (Calendar, Nextcloud, Messengers)
 ├── Translation Connectors
 ├── Notification Service
-└── Storage Layer
+└── Caching & Cache Storage
 
 
 ---

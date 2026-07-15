@@ -1,17 +1,8 @@
-# Data Model
+# Data Model (SQLModel Database Schema)
 
 ## Overview
 
-LiturgyBridge consists of several interconnected domains:
-
-1. Identity and Users
-2. Communities
-3. Liturgical Content
-4. Services and Events
-5. Groups and Resources
-6. Notifications
-
-The data model should remain flexible to support different Orthodox traditions, languages, and community structures.
+LiturgyBridge consists of several interconnected domains. All primary keys are UUIDs (except for `TextItem` which uses a unique string key) to allow seamless distributed/local-first sync between local parish servers and the central cloud.
 
 ---
 
@@ -19,30 +10,23 @@ The data model should remain flexible to support different Orthodox traditions, 
 
 ## Description
 
-A User represents a person using LiturgyBridge.
-
-A user may participate in multiple communities.
+A User represents an account in the system, supporting Single Sign-On (SSO) and global roles.
 
 ## Attributes
 
-Possible attributes:
-
-- User ID
-- Name
-- Email (optional depending on account type)
-- Preferred language
-- Notification preferences
-- Joined communities
-- Roles
+- **User ID:** UUID (Primary Key)
+- **Name:** String
+- **Email:** String (Unique, Indexed)
+- **SSO Provider:** String (Optional, e.g., "nextcloud", "churchtools")
+- **External User ID:** String (Optional, ID from the SSO provider)
+- **Preferred Language:** String (Default: "de")
+- **Global Roles:** JSON array of strings (e.g., `["translator", "platform_admin"]`)
 
 ## Relationships
 
-A User can:
-
-- belong to multiple Communities
-- belong to multiple Groups
-- receive Notifications
-- manage personal preferences
+- **Communities:** Linked to `Community` via the `Membership` table.
+- **Bookmarks:** Has many `Bookmark` records.
+- **Notes:** Has many `UserNote` records.
 
 ---
 
@@ -50,37 +34,23 @@ A User can:
 
 ## Description
 
-A Community represents an independent parish, monastery, or organization.
-
-Examples:
-
-- Orthodox parish
-- monastery
-- mission community
-- choir organization
+A Community represents an independent parish, monastery, or choir organization.
 
 ## Attributes
 
-Possible attributes:
-
-- Community ID
-- Name
-- Description
-- Location
-- Contact information
-- Public visibility settings
-- Opening hours
+- **Community ID:** UUID (Primary Key)
+- **Name:** String
+- **Description:** String (Optional)
+- **Location:** String (Optional)
+- **External Calendar Feed:** String (Optional, URL to ICS/iCal feed)
+- **External Storage Root:** String (Optional, Nextcloud directory reference)
 
 ## Relationships
 
-A Community has:
-
-- Members
-- Groups
-- Events
-- Documents
-- Media
-- Announcements
+- **Members:** Linked to `User` via the `Membership` table.
+- **Services:** Has many `LiturgicalService` instances.
+- **Events:** Has many `Event` instances imported from external calendars.
+- **Resources:** Has many `Resource` references to Nextcloud folders/files.
 
 ---
 
@@ -88,212 +58,115 @@ A Community has:
 
 ## Description
 
-Membership connects Users with Communities.
-
-A user may belong to multiple communities.
+A join model connecting Users with Communities, specifying community-level roles. A user can hold multiple roles in a single community.
 
 ## Attributes
 
-Possible attributes:
-
-- User
-- Community
-- Membership status
-- Joined date
-- Community role
-
-Examples:
-
-- member
-- administrator
-- editor
-- volunteer
+- **User ID:** UUID (Foreign Key to User, Compound Primary Key)
+- **Community ID:** UUID (Foreign Key to Community, Compound Primary Key)
+- **Community Roles:** JSON array of strings (e.g., `["priest", "administrator", "member"]`)
 
 ---
 
-# 4. Group
+# 4. Group (Community Adaption)
 
 ## Description
 
-A Group is a smaller area inside a Community.
+Groups (like youth groups or choir groups) are defined on external systems (e.g., Nextcloud groups or ChurchTools groups). LiturgyBridge accesses them via SSO directory mapping rather than managing a duplicate relational database of groups.
 
-Examples:
+---
 
-- choir
-- youth group
-- volunteers
-- catechism group
+# 5. Liturgical Template
+
+## Description
+
+Outlines the structure of a worship service. It is designed using a hybrid model: standard relational metadata combined with a nested JSON structure that outlines the sequence of sections.
 
 ## Attributes
 
-Possible attributes:
+- **Template ID:** UUID (Primary Key)
+- **Name:** String
+- **Tradition:** String (e.g., "Byzantine", "Slavic")
+- **Structure:** JSON tree structure containing nested service sections, where each section references unique `TextItem` keys.
 
-- Group ID
-- Name
-- Description
-- Access level
+---
+
+# 6. Liturgical Service
+
+## Description
+
+A scheduled or running instance of a template, tracking active synchronization state for visitors.
+
+## Attributes
+
+- **Service ID:** UUID (Primary Key)
+- **Template ID:** UUID (Foreign Key to LiturgicalTemplate)
+- **Community ID:** UUID (Foreign Key to Community)
+- **Scheduled Time:** DateTime (Timezone-aware)
+- **Status:** String (e.g., "draft", "active", "completed")
+- **Current Section Key:** String (Optional, tracks the active section index for WebSockets sync)
+- **Active Languages:** JSON array of language code strings (e.g., `["cu", "de"]`)
 
 ## Relationships
 
-A Group has:
-
-- Members
-- Resources
-- Events
-- Messages
+- **Events:** Linked to `Event` records associated with this service.
+- **Bookmarks:** Has many `Bookmark` records from readers.
 
 ---
 
-# 5. Liturgical Service
+# 7. Event
 
 ## Description
 
-A Service represents a specific worship event.
-
-Examples:
-
-- Divine Liturgy of St. John Chrysostom
-- Vespers
-- Matins
-- Feast Day Service
+A calendar activity imported from an external calendar system.
 
 ## Attributes
 
-Possible attributes:
+- **Event ID:** UUID (Primary Key)
+- **Title:** String
+- **Start Time:** DateTime (Timezone-aware)
+- **Location:** String (Optional)
+- **External Source Type:** String (e.g., "ical", "churchtools")
+- **External ID:** String
+- **Community ID:** UUID (Foreign Key to Community)
+- **Associated Service ID:** UUID (Optional, Foreign Key to LiturgicalService)
 
-- Service ID
-- Date and time
-- Service type
-- Language
-- Community
-- Liturgical template
+---
+
+# 8. TextItem
+
+## Description
+
+Stores base liturgical text metadata. A `TextItem` can be global (visible to all communities, e.g. standard litanies) or local/community-specific (e.g. local sermons, announcements, or custom prayers).
+
+## Attributes
+
+- **Key:** String (Primary Key, unique human-readable identifier like `liturgy.chrysostom.great_litany`, or auto-generated local key like `local.community_id.text_name`)
+- **Category:** String (e.g., "litany", "hymn", "announcement", "sermon")
+- **Default Text:** String (The base original language text)
+- **Community ID:** UUID (Optional, Foreign Key to Community. Null if global)
 
 ## Relationships
 
-A Service contains:
-
-- Sections
-- Texts
-- Translations
-- Participants
+- **Translations:** Has many `TranslationItem` records.
+- **Notes:** Has many `UserNote` records.
 
 ---
 
-# 6. Liturgical Template
+# 9. TranslationItem
 
 ## Description
 
-A Liturgical Template defines the structure of a recurring service.
-
-Examples:
-
-- Sunday Divine Liturgy
-- Paschal Service
-- Funeral Service
+Stores translations in different languages mapped to a specific `TextItem` key.
 
 ## Attributes
 
-Possible attributes:
-
-- Template ID
-- Name
-- Tradition
-- Structure
-- Required sections
-
-## Relationships
-
-A Template contains:
-
-- Liturgical Sections
-
----
-
-# 7. Liturgical Section
-
-## Description
-
-A Section represents a part of a service.
-
-Examples:
-
-- Great Litany
-- Little Entrance
-- Gospel Reading
-- Cherubic Hymn
-- Anaphora
-
-## Attributes
-
-Possible attributes:
-
-- Section ID
-- Name
-- Order number
-- Speaker
-- Text references
-
----
-
-# 8. Text and Translation
-
-## Description
-
-A Text represents liturgical content in a specific language.
-
-## Attributes
-
-Possible attributes:
-
-- Text ID
-- Language
-- Original/source
-- Translation status
-- Approval status
-
-Examples:
-
-Languages:
-
-- Church Slavonic
-- German
-- English
-- Greek
-- Romanian
-
-## Relationships
-
-A Text can have:
-
-- multiple translations
-- references to sections
-- contributors
-
----
-
-# 9. Event
-
-## Description
-
-An Event represents a community activity.
-
-Examples:
-
-- worship service
-- choir rehearsal
-- parish meeting
-- feast celebration
-
-## Attributes
-
-Possible attributes:
-
-- Event ID
-- Title
-- Date/time
-- Location
-- Visibility
-- Organizer
+- **Translation ID:** UUID (Primary Key)
+- **Text Key:** String (Foreign Key to TextItem)
+- **Language:** String (e.g., "de", "en", "ru", "el")
+- **Translation Text:** String
+- **Approved:** Boolean (Indicates if the translation is verified by a liturgical editor)
+- **Author ID:** UUID (Optional, Foreign Key to User who authored the translation)
 
 ---
 
@@ -301,25 +174,16 @@ Possible attributes:
 
 ## Description
 
-A Resource represents shared community material.
-
-Examples:
-
-- PDF
-- image
-- audio recording
-- document
-- hymn text
+Stores a reference to files stored on an external cloud (Nextcloud, WebDAV, Google Drive) associated with a parish.
 
 ## Attributes
 
-Possible attributes:
-
-- Resource ID
-- Type
-- Owner
-- Access permissions
-- Related group/community
+- **Resource ID:** UUID (Primary Key)
+- **External URL:** String
+- **Storage Provider:** String (e.g., "nextcloud", "webdav", "gdrive")
+- **File Type:** String (e.g., "sheet_music", "audio", "document")
+- **Group ID:** String (Optional, restricts file access to specific external group IDs)
+- **Community ID:** UUID (Foreign Key to Community)
 
 ---
 
@@ -327,24 +191,39 @@ Possible attributes:
 
 ## Description
 
-A Notification informs users about relevant updates.
-
-Examples:
-
-- service time changed
-- new document available
-- event reminder
+Logs outgoing notifications triggered via webhook and sent to Telegram, Signal, or WhatsApp.
 
 ## Attributes
 
-Possible attributes:
-
-- Notification ID
-- Recipient
-- Type
-- Message
-- Timestamp
+- **Notification ID:** UUID (Primary Key)
+- **Event Type:** String (e.g., "service_started", "service_time_changed")
+- **Target Channel ID:** String (Channel ID or Webhook URL)
+- **Routing Channel:** String (e.g., "telegram", "signal", "whatsapp")
+- **Status:** String (e.g., "pending", "sent", "failed")
+- **Error Message:** String (Optional)
+- **Timestamp:** DateTime (Timezone-aware)
 
 ---
 
-# 12. Relationships Overview
+# 12. Reader Features (Bookmarks & User Notes)
+
+## Bookmark
+
+Tracks a user's bookmarked section key inside an active service, allowing them to save progress.
+
+- **Bookmark ID:** UUID (Primary Key)
+- **User ID:** UUID (Foreign Key to User)
+- **Service ID:** UUID (Foreign Key to LiturgicalService)
+- **Section Key:** String
+- **Created At:** DateTime (Timezone-aware)
+
+## UserNote
+
+Stores private notes or annotations written by a user for a specific `TextItem`.
+
+- **Note ID:** UUID (Primary Key)
+- **User ID:** UUID (Foreign Key to User)
+- **Text Key:** String (Foreign Key to TextItem)
+- **Content:** String
+- **Created At:** DateTime (Timezone-aware)
+- **Updated At:** DateTime (Timezone-aware)
