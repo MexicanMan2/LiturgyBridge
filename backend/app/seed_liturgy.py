@@ -26,13 +26,6 @@ def seed_database():
     SQLModel.metadata.create_all(engine)
 
     with Session(engine) as session:
-        # 1. Verify if already seeded
-        existing_template = session.exec(
-            select(LiturgicalTemplate).where(LiturgicalTemplate.name == "Göttliche Liturgie des Hl. Johannes Chrysostomus")
-        ).first()
-        if existing_template:
-            print("Database already seeded with Liturgy Template. Skipping seeding.")
-            return
         print("Seeding community and priest...")
         # Create or fetch default community
         comm = session.get(Community, uuid.UUID("87a935b6-6124-4f7c-8b9c-8605ef4dad87"))
@@ -119,6 +112,41 @@ def seed_database():
                 "Sermon / Homily",
                 "Проповедь",
                 "[Wort des Priesters / Predigt]"
+            ),
+            # 9. Communion - The Elevation
+            (
+                "liturgy.communion.elevation", "litany",
+                "The Holy things for the Holy!",
+                "Святая святым.",
+                "Das Heilige den Heiligen!"
+            ),
+            # 10. Communion - Response
+            (
+                "liturgy.communion.response", "hymn",
+                "One is Holy, one is Lord, Jesus Christ, to the glory of God the Father. Amen.",
+                "Един Свят, Един Господь, Иисус Христос, во славу Бога Отца. Аминь.",
+                "Einer ist heilig, einer ist der Herr: Jesus Christus, zur Ehre Gottes des Vaters. Amen."
+            ),
+            # 11. Communion Hymn (Koinonikon)
+            (
+                "liturgy.communion.koinonikon", "hymn",
+                "Receive the Body of Christ; taste the fountain of immortality. Alleluia, Alleluia, Alleluia.",
+                "Тело Христово приимите, Источника безсмертнаго вкусите. Аллилуиа, аллилуиа, аллилуиа.",
+                "Empfangt den Leib Christi, kostet von der Quelle der Unsterblichkeit. Halleluja, Halleluja, Halleluja."
+            ),
+            # 12. Communion - Invitation
+            (
+                "liturgy.communion.invitation", "litany",
+                "With fear of God and with faith and love, draw near!",
+                "Со страхом Божиим и верою приступите.",
+                "Mit Furcht Gottes, mit Glauben und Liebe tretet herbei!"
+            ),
+            # 13. Communion - Post Communion Hymn
+            (
+                "liturgy.communion.post_communion", "hymn",
+                "We have seen the true Light, we have received the Heavenly Spirit, we have found the true faith...",
+                "Видехом Свет истинный, прияхом Духа Небеснаго, обретохом веру истинную...",
+                "Wir haben das wahre Licht gesehen, wir haben den himmlischen Geist empfangen, wir haben den wahren Glauben gefunden..."
             ),
             # --- Tonal changeables (Tone 6 for July 19, 2026) ---
             (
@@ -288,20 +316,49 @@ def seed_database():
                 {
                     "section_key": "part_2.lords_prayer",
                     "text_keys": ["liturgy.lords_prayer.main"]
+                },
+                {
+                    "section_key": "part_2.communion_elevation",
+                    "text_keys": ["liturgy.communion.elevation"]
+                },
+                {
+                    "section_key": "part_2.communion_response",
+                    "text_keys": ["liturgy.communion.response"]
+                },
+                {
+                    "section_key": "part_2.communion_koinonikon",
+                    "text_keys": ["liturgy.communion.koinonikon"]
+                },
+                {
+                    "section_key": "part_2.communion_invitation",
+                    "text_keys": ["liturgy.communion.invitation"]
+                },
+                {
+                    "section_key": "part_2.communion_post",
+                    "text_keys": ["liturgy.communion.post_communion"]
                 }
             ]
         }
 
-        template = LiturgicalTemplate(
-            id=uuid.UUID("a9fb5917-a068-4592-80de-df619280d922"),
-            name="Göttliche Liturgie des Hl. Johannes Chrysostomus",
-            tradition="Byzantine",
-            structure=liturgy_structure,
-            is_shared=True
-        )
-        session.add(template)
-        session.commit()
-        print("Divine Liturgy Template seeded successfully!")
+        existing_template = session.exec(
+            select(LiturgicalTemplate).where(LiturgicalTemplate.name == "Göttliche Liturgie des Hl. Johannes Chrysostomus")
+        ).first()
+        if existing_template:
+            existing_template.structure = liturgy_structure
+            session.add(existing_template)
+            session.commit()
+            print("Divine Liturgy Template structure updated safely!")
+        else:
+            template = LiturgicalTemplate(
+                id=uuid.UUID("a9fb5917-a068-4592-80de-df619280d922"),
+                name="Göttliche Liturgie des Hl. Johannes Chrysostomus",
+                tradition="Byzantine",
+                structure=liturgy_structure,
+                is_shared=True
+            )
+            session.add(template)
+            session.commit()
+            print("Divine Liturgy Template seeded successfully!")
 
 if __name__ == "__main__":
     seed_database()

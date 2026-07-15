@@ -1,0 +1,75 @@
+================================================================================
+GOTTESDIENST-ABLAUF FÜR NÄCHSTEN SONNTAG: Sunday, 19. July 2026
+================================================================================
+Liturgischer Tag: 7th Sunday after Pentecost
+Wochenton:        Tone 6 (Ton 6)
+Epistel-Lesung:   Romans 12:1-10
+Evangelium:       Matthew 12:1-15
+--------------------------------------------------------------------------------
+
+Abschnitt 1: [PART_1.BLESSING] (Anfangssegen)
+  • Text-Key: liturgy.opening_blessing
+    [cu] (Slawisch): "Благословено Царство Отца..."
+    [de] (Deutsch) : "Gesegnet sei das Reich des Vaters..."
+    [Audio-Quelle] : /api/v1/liturgy/audio-tracks/c4ac69c9.../stream (YouTube-Import: Byzantinischer Segen)
+
+Abschnitt 2: [PART_1.GREAT_LITANY] (Große Ektenie)
+  • Text-Key: liturgy.great_litany.lord_have_mercy
+    [cu] (Slawisch): "Господи, помилуй."
+    [de] (Deutsch) : "Herr, erbarme dich."
+    [Audio-Quelle] : /api/v1/liturgy/audio-tracks/46ab7034.../stream (Studioaufnahme - Systemstandard)
+
+Abschnitt 3: [PART_1.FIRST_ANTIPHON] (Erstes Antiphon)
+  • Text-Key: liturgy.first_antiphon.refrain
+    [cu] (Slawisch): "Молитвами Богородицы, Спасе..."
+    [de] (Deutsch) : "Auf die Fürbitten der Gottesgebärerin..."
+    [Audio-Quelle] : /api/v1/liturgy/audio-tracks/0e543a40.../stream (Datenbank-Fallback: Generierte TTS-Sprechstimme)
+
+Abschnitt 4: [PART_1.TRISAGION] (Dreimalheilig-Hymnus)
+  • Text-Key: liturgy.trisagion.main
+    [cu] (Slawisch): "Святый Боже, Святый Крепкий..."
+    [de] (Deutsch) : "Heiliger Gott, heiliger Starker..."
+    [Audio-Quelle] : /api/v1/liturgy/audio-tracks/a9d0cb4c.../stream (Datenbank-Fallback: Generierte TTS-Sprechstimme)
+
+Abschnitt 5: [PART_1.TROPARION] (Veränderliches Auferstehungs-Troparion - Automatisch Ton 6!)
+  • Text-Key: dynamic.tonal_troparion (Resolved to: oktoechos.tone_6.troparion)
+    [cu] (Slawisch): "Ангельския силы на гробе Твоем..."
+    [de] (Deutsch) : "Die Engelsmächte waren an Deinem Grabe..."
+    [Audio-Quelle] : /api/v1/liturgy/audio-tracks/046cf077.../stream (Datenbank-Fallback: Generierte TTS-Sprechstimme)
+
+Abschnitt 6: [PART_1.READINGS_EPISTLE] (Tageslesung Epistel - Automatisch Römer 12!)
+  • Text-Key: dynamic.epistle_reading (Resolved to: scripture.epistle.Romans 12:1-10)
+    [cu] (Slawisch): "Апостол: Римлянам 12:1-10. Имуще же..."
+    [de] (Deutsch) : "Epistellesung: Römer 12,1-10. Da wir aber..."
+    [Audio-Quelle] : /api/v1/liturgy/audio-tracks/19a510ff.../stream (Datenbank-Fallback: Generierte TTS-Sprechstimme)
+
+Abschnitt 7: [PART_1.READINGS_GOSPEL] (Tageslesung Evangelium - Automatisch Matthäus 12!)
+  • Text-Key: dynamic.gospel_reading (Resolved to: scripture.gospel.Matthew 12:1-15)
+    [cu] (Slawisch): "Евангелие: Матфея 12:1-15. И влез в..."
+    [de] (Deutsch) : "Evangelienlesung: Matthäus 12,1-15. Da stieg..."
+    [Audio-Quelle] : /api/v1/liturgy/audio-tracks/cb834b74.../stream (Datenbank-Fallback: Generierte TTS-Sprechstimme)
+
+Abschnitt 8: [PART_1.SERMON] (Predigt - Bereit zum Ausfüllen)
+  • Text-Key: liturgy.sermon_placeholder
+    [cu] (Slawisch): "Проповедь..."
+    [de] (Deutsch) : "[Wort des Priesters / Predigt]..."
+    [Audio-Quelle] : /api/v1/liturgy/audio-tracks/a5b75094.../stream (Automatische Live-Vorlesefunktion (TTS) bei Textänderung)
+
+Abschnitt 9: [PART_2.CHERUBIC_HYMN] (Cherubim-Gesang - Echte Choraufnahme!)
+  • Text-Key: liturgy.cherubic_hymn.main
+    [cu] (Slawisch): "Иже Херувимы тайно образующе..."
+    [de] (Deutsch) : "Die wir die Cherubim geheimnisvoll darstellen..."
+    [Audio-Quelle] : /api/v1/liturgy/audio-tracks/9dd6c039.../stream (Echtaufnahme: Gesungen vom Chor der St. Nikolaus Kathedrale Berlin!)
+
+Abschnitt 10: [PART_2.CREED] (Glaubensbekenntnis)
+  • Text-Key: liturgy.creed.main
+    [cu] (Slawisch): "Верую во единаго Бога..."
+    [de] (Deutsch) : "Ich glaube an den einen Gott..."
+    [Audio-Quelle] : /api/v1/liturgy/audio-tracks/a5c98bf0.../stream (Studioaufnahme - Systemstandard)
+
+Abschnitt 11: [PART_2.LORDS_PRAYER] (Vaterunser)
+  • Text-Key: liturgy.lords_prayer.main
+    [cu] (Slawisch): "Отче наш, Иже еси на небесех..."
+    [de] (Deutsch) : "Vater unser im Himmel..."
+    [Audio-Quelle] : /api/v1/liturgy/audio-tracks/a2094af0.../stream (Studioaufnahme - Systemstandard)
+================================================================================
