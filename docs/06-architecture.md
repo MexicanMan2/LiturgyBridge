@@ -40,6 +40,27 @@ Identity       Notifications      Media Cache
 
 
 
+```mermaid
+graph TD
+    subgraph Client Layer (Frontend)
+        A[Mobile Web App / PWA] -->|REST & WebSockets| B[FastAPI Gateway]
+        A2[Admin Portal] -->|REST| B
+    end
+
+    subgraph Logic Layer (Backend)
+        B --> C[SQLModel ORM]
+        B --> D[Integration Connectors]
+    end
+
+    subgraph Data & External Layer
+        C --> E[(PostgreSQL + JSONB)]
+        D -.->|iCal/ICS| F[ChurchTools / Calendars]
+        D -.->|WebDAV| G[Nextcloud / Storage]
+        D -.->|Webhooks| H[Telegram / Signal Bots]
+        B -.->|OAuth2/OIDC| I[SSO Identity Provider]
+    end
+```
+
 ---
 
 # Technology Stack
