@@ -202,6 +202,17 @@ def list_services(community_id: Optional[uuid.UUID] = None, session: Session = D
         query = query.where(LiturgicalService.community_id == community_id)
     return session.exec(query).all()
 
+@router.get("/services/latest", response_model=LiturgicalService)
+def get_latest_service(session: Session = Depends(get_session)):
+    """
+    Returns the latest scheduled liturgical service.
+    """
+    query = select(LiturgicalService).order_by(LiturgicalService.scheduled_time.desc())
+    service = session.exec(query).first()
+    if not service:
+        raise HTTPException(status_code=404, detail="No services scheduled")
+    return service
+
 @router.post("/services", response_model=LiturgicalService, status_code=status.HTTP_201_CREATED)
 def create_service(service_in: ServiceCreate, session: Session = Depends(get_session)):
     """
