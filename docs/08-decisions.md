@@ -471,6 +471,21 @@ Storing files directly in the database ensures the application is 100% self-cont
 
 ---
 
+# Decision 028 - Dynamic Sermon Translation and Audio Synthesis
+
+## Decision
+
+The application will support dynamic sermon editing by priests in any source language. The backend will expose a dedicated endpoint `PUT /api/v1/liturgy/services/{service_id}/sermon` that accepts the raw sermon text and source language. The system will:
+1. Generate unique service-specific text keys (`sermon.service_{service_id}`).
+2. Translate the text into all other active service languages (excluding Church Slavonic, `cu`) using a swappable Translation Service (supporting DeepL API and LLM-fallback).
+3. Automatically trigger the active Text-to-Speech (TTS) provider to synthesize and store MP3 audio tracks directly in the database (`AudioTrack`) for each translated text.
+
+## Reason
+
+A priest must be free to preach in their preferred language. To make the sermon instantly accessible to international visitors without forcing them to read screens during the liturgy, translating the text and synthesizing the audio files immediately allows visitors to follow along via their audio guide headphones in real-time. Excluding Church Slavonic is required because it is a sacred liturgical language not used for contemporary sermons.
+
+---
+
 # Future Decisions
 
 Future decisions should be documented when they affect:

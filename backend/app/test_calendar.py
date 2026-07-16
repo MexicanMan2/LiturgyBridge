@@ -117,14 +117,14 @@ def test_liturgical_features_workflow():
             "template_id": template_id,
             "community_id": community_id,
             "scheduled_time": service_date.isoformat(),
-            "active_languages": ["de", "cu"] # Request both German and Church Slavonic overlays
+            "active_languages": ["de", "cu", "en"] # Request German, Church Slavonic, and English overlays
         }
     )
     assert schedule_response.status_code == 201
     service_id = schedule_response.json()["id"]
 
-    # Fetch details for the service run with German and Church Slavonic overlays resolved
-    details_response = client.get(f"/api/v1/liturgy/services/{service_id}?languages=de,cu")
+    # Fetch details for the service run with German, Church Slavonic, and English overlays resolved
+    details_response = client.get(f"/api/v1/liturgy/services/{service_id}?languages=de,cu,en")
     assert details_response.status_code == 200
     details = details_response.json()
     
@@ -208,7 +208,45 @@ def test_liturgical_features_workflow():
     assert "fallback TTS audio in database." in bootstrap_response.json()["message"]
     print("TTS database bootstrapping mechanism verified successfully.")
 
-    print("ALL CALENDAR, WIKI, CHATBOT, AUDIOTRACK, AND TTS TESTS PASSED SUCCESSFULLY!")
+    # 10. Verify Dynamic Priest Sermon Editing, Translation, and TTS Synthesis
+    sermon_response = client.put(
+        f"/api/v1/liturgy/services/{service_id}/sermon",
+        json={
+            "text": "Liebe Gemeinde, am heutigen Sonntag gedenken wir...",
+            "language": "de"
+        }
+    )
+    assert sermon_response.status_code == 200
+    sermon_data = sermon_response.json()
+    assert sermon_data["sermon_key"] == f"sermon.service_{service_id}"
+    
+    # Assert translations contains de and en
+    langs = [t["language"] for t in sermon_data["translations"]]
+    assert "de" in langs
+    assert "en" in langs
+    assert "cu" not in langs  # EXCLUDE Church Slavonic!
+    print("Sermon translations generated successfully (excluding Church Slavonic)!")
+
+    # Fetch service details again and assert the sermon placeholder points to the service-specific sermon
+    service_details = client.get(f"/api/v1/liturgy/services/{service_id}?languages=de,en").json()
+    texts = service_details["texts"]
+    assert "liturgy.sermon_placeholder" in texts
+    sermon_text_item = texts["liturgy.sermon_placeholder"]
+    assert "Liebe Gemeinde" in sermon_text_item["translations"]["de"]
+    assert "en" in sermon_text_item["translations"]
+    
+    # Verify AudioTrack was generated for the translated sermon
+    sermon_audio_url = sermon_text_item["audio_url"]
+    assert "/api/v1/liturgy/audio-tracks/" in sermon_audio_url
+    assert "/stream" in sermon_audio_url
+    
+    # Request the audio stream
+    sermon_stream = client.get(sermon_audio_url)
+    assert sermon_stream.status_code == 200
+    assert b"MOCK_MP3_AUDIO_DATA" in sermon_stream.content
+    print("Sermon dynamic translations and database audio tracks verified successfully!")
+
+    print("ALL CALENDAR, WIKI, CHATBOT, AUDIOTRACK, TTS, AND SERMON TRANSLATION TESTS PASSED SUCCESSFULLY!")
 
 if __name__ == "__main__":
     test_liturgical_features_workflow()

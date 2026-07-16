@@ -249,6 +249,11 @@ def get_service_details(
         cal_info = get_liturgical_day_info(service.scheduled_time)
         tone = cal_info["tone"]
         
+        # Check if service-specific sermon exists in the DB
+        sermon_key = f"sermon.service_{service.id}"
+        sermon_exists = session.get(TextItem, sermon_key) is not None
+        resolved_sermon_key = sermon_key if sermon_exists else "liturgy.sermon_placeholder"
+        
         raw_keys = extract_text_keys(template.structure)
         
         # Define mappings from placeholder keys to actual resolved database keys
@@ -257,7 +262,8 @@ def get_service_details(
             "dynamic.tonal_kontakion": f"oktoechos.tone_{tone}.kontakion",
             "dynamic.tonal_prokeimenon": f"oktoechos.tone_{tone}.prokeimenon",
             "dynamic.epistle_reading": f"scripture.epistle.{cal_info['epistle_ref']}",
-            "dynamic.gospel_reading": f"scripture.gospel.{cal_info['gospel_ref']}"
+            "dynamic.gospel_reading": f"scripture.gospel.{cal_info['gospel_ref']}",
+            "liturgy.sermon_placeholder": resolved_sermon_key
         }
         
         # Map raw keys to db lookup keys
@@ -652,3 +658,149 @@ def stream_tts_speech(text: str, language: str = "de"):
             status_code=502,
             detail=f"Failed to synthesize speech: {str(e)}"
         )
+
+class SermonUpdate(BaseModel):
+    text: str
+    language: str
+
+@router.put("/services/{service_id}/sermon", status_code=status.HTTP_200_OK)
+async def update_service_sermon(
+    service_id: uuid.UUID,
+    sermon_in: SermonUpdate,
+    session: Session = Depends(get_session)
+):
+    """
+    Updates the sermon text for a specific LiturgicalService.
+    Automatically translates the sermon into all other active service languages (excluding Church Slavonic).
+    Immediately pre-generates TTS audio files in the database for the translations.
+    """
+    # 1. Fetch Service
+    service = session.get(LiturgicalService, service_id)
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found")
+
+    sermon_key = f"sermon.service_{service_id}"
+    
+    # 2. Get/Create TextItem
+    text_item = session.get(TextItem, sermon_key)
+    if not text_item:
+        text_item = TextItem(
+            key=sermon_key,
+            category="sermon",
+            default_text=sermon_in.text,
+            community_id=service.community_id
+        )
+        session.add(text_item)
+        session.commit()
+        session.refresh(text_item)
+    else:
+        text_item.default_text = sermon_in.text
+        session.add(text_item)
+        session.commit()
+
+    # 3. Create or Update Source Translation
+    source_trans = session.exec(
+        select(TranslationItem).where(
+            TranslationItem.text_key == sermon_key,
+            TranslationItem.language == sermon_in.language
+        )
+    ).first()
+    if not source_trans:
+        source_trans = TranslationItem(
+            text_key=sermon_key,
+            language=sermon_in.language,
+            translation_text=sermon_in.text,
+            approved=True
+        )
+    else:
+        source_trans.translation_text = sermon_in.text
+    session.add(source_trans)
+    session.commit()
+
+    # 4. Determine Active Translation Languages
+    # Excluding the source language itself and Church Slavonic ("cu")
+    active_langs = service.active_languages or ["de", "en"]
+    target_langs = [l for l in active_langs if l != sermon_in.language and l != "cu"]
+
+    from backend.app.services.translation import translation_service
+    from backend.app.services.tts_provider import get_tts_provider
+
+    translations_list = [source_trans]
+
+    for target_lang in target_langs:
+        try:
+            # Trigger dynamic translation
+            translated_text = await translation_service.translate_text(
+                sermon_in.text,
+                source_lang=sermon_in.language,
+                target_lang=target_lang
+            )
+            
+            # Save or update translation item
+            trans_item = session.exec(
+                select(TranslationItem).where(
+                    TranslationItem.text_key == sermon_key,
+                    TranslationItem.language == target_lang
+                )
+            ).first()
+            if not trans_item:
+                trans_item = TranslationItem(
+                    text_key=sermon_key,
+                    language=target_lang,
+                    translation_text=translated_text,
+                    approved=True
+                )
+            else:
+                trans_item.translation_text = translated_text
+            session.add(trans_item)
+            session.commit()
+            session.refresh(trans_item)
+            translations_list.append(trans_item)
+        except Exception as e:
+            print(f"Failed to translate sermon to {target_lang}: {str(e)}")
+
+    # 5. Synthesize TTS Audio Tracks for all translations (including source)
+    tts = get_tts_provider()
+    for trans in translations_list:
+        try:
+            audio_bytes = tts.synthesize_speech(trans.translation_text, trans.language)
+            
+            # Save/Update AudioTrack
+            audio_track = session.exec(
+                select(AudioTrack).where(
+                    AudioTrack.text_key == sermon_key,
+                    AudioTrack.language == trans.language
+                )
+            ).first()
+            if not audio_track:
+                audio_track = AudioTrack(
+                    text_key=sermon_key,
+                    language=trans.language,
+                    audio_url="placeholder",
+                    is_system_default=True,
+                    is_shared=True,
+                    description=f"Priest Sermon TTS ({trans.language})",
+                    audio_data=audio_bytes
+                )
+            else:
+                audio_track.audio_data = audio_bytes
+                
+            session.add(audio_track)
+            session.commit()
+            session.refresh(audio_track)
+            
+            # Update stream URL pointing to our stream endpoint
+            audio_track.audio_url = f"/api/v1/liturgy/audio-tracks/{audio_track.id}/stream"
+            session.add(audio_track)
+            session.commit()
+        except Exception as e:
+            print(f"Failed to synthesize sermon TTS for language {trans.language}: {str(e)}")
+
+    return {
+        "message": "Sermon successfully updated, translated, and TTS synthesized.",
+        "sermon_key": sermon_key,
+        "translations": [
+            {"language": t.language, "text": t.translation_text}
+            for t in translations_list
+        ]
+    }
