@@ -11,6 +11,23 @@ from sqlmodel import Session, select
 from backend.app.database import engine
 from backend.app.models import TextItem, TranslationItem, AudioTrack
 
+def split_text_into_chunks(text: str, max_chars: int = 150) -> list[str]:
+    words = text.split()
+    chunks = []
+    current_chunk = []
+    current_length = 0
+    for word in words:
+        if current_length + len(word) + 1 > max_chars:
+            chunks.append(" ".join(current_chunk))
+            current_chunk = [word]
+            current_length = len(word)
+        else:
+            current_chunk.append(word)
+            current_length += len(word) + 1
+    if current_chunk:
+        chunks.append(" ".join(current_chunk))
+    return chunks
+
 def generate_all_tracks():
     print("=" * 80)
     print("GENERATING AUDIO TRACKS FOR ALL 32 LITURGY SECTIONS...")
@@ -59,16 +76,17 @@ def generate_all_tracks():
 
             print(f"Synthesizing [{key}] ({clean_text[:40]}...)...")
             try:
-                # URL encode the query text
-                url_encoded_text = urllib.parse.quote(clean_text)
-                tts_url = f"https://translate.google.com/translate_tts?ie=UTF-8&tl=de&client=tw-ob&q={url_encoded_text}"
-                
-                req = urllib.request.Request(
-                    tts_url,
-                    headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-                )
-                with urllib.request.urlopen(req, context=ssl_context) as response:
-                    audio_bytes = response.read()
+                chunks = split_text_into_chunks(clean_text)
+                audio_bytes = b""
+                for chunk in chunks:
+                    url_encoded_text = urllib.parse.quote(chunk)
+                    tts_url = f"https://translate.google.com/translate_tts?ie=UTF-8&tl=de&client=tw-ob&q={url_encoded_text}"
+                    req = urllib.request.Request(
+                        tts_url,
+                        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+                    )
+                    with urllib.request.urlopen(req, context=ssl_context) as response:
+                        audio_bytes += response.read()
 
                 # Delete existing track if any
                 old_tracks = session.exec(
