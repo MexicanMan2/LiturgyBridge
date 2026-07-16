@@ -244,9 +244,47 @@ def test_liturgical_features_workflow():
     sermon_stream = client.get(sermon_audio_url)
     assert sermon_stream.status_code == 200
     assert b"MOCK_MP3_AUDIO_DATA" in sermon_stream.content
-    print("Sermon dynamic translations and database audio tracks verified successfully!")
+    # 11. Verify Dynamic Scripture Resolution in 5 Languages (cu, ru, uk, de, en)
+    # Schedule a service for August 2, 2026 (a date whose readings are not seeded in the database)
+    aug_service_date = datetime(2026, 8, 2, 10, 0, 0, tzinfo=timezone.utc)
+    aug_schedule_response = client.post(
+        "/api/v1/liturgy/services",
+        json={
+            "template_id": template_id,
+            "community_id": community_id,
+            "scheduled_time": aug_service_date.isoformat(),
+            "active_languages": ["de", "cu", "ru", "uk", "en"]
+        }
+    )
+    assert aug_schedule_response.status_code == 201
+    aug_service_id = aug_schedule_response.json()["id"]
+    
+    # Querying details triggers dynamic resolution and caching of August 2 scripture readings
+    aug_details_response = client.get(
+        f"/api/v1/liturgy/services/{aug_service_id}?languages=de,cu,ru,uk,en"
+    )
+    assert aug_details_response.status_code == 200
+    aug_details = aug_details_response.json()
+    aug_texts = aug_details["texts"]
+    
+    # Assert dynamic readings exist and contain all 5 requested translations!
+    assert "dynamic.epistle_reading" in aug_texts
+    epistle_item = aug_texts["dynamic.epistle_reading"]
+    assert "de" in epistle_item["translations"]
+    assert "cu" in epistle_item["translations"]
+    assert "ru" in epistle_item["translations"]
+    assert "uk" in epistle_item["translations"]
+    assert "en" in epistle_item["translations"]
+    
+    # Verify German TTS audio was synthesized and registered in the database for the new scripture
+    epistle_audio_url = epistle_item["audio_url"]
+    assert "/api/v1/liturgy/audio-tracks/" in epistle_audio_url
+    epistle_stream = client.get(epistle_audio_url)
+    assert epistle_stream.status_code == 200
+    assert b"MOCK_MP3_AUDIO_DATA" in epistle_stream.content
+    print("Dynamic 5-language Scripture Resolution and TTS audio synthesis verified successfully!")
 
-    print("ALL CALENDAR, WIKI, CHATBOT, AUDIOTRACK, TTS, AND SERMON TRANSLATION TESTS PASSED SUCCESSFULLY!")
+    print("ALL CALENDAR, WIKI, CHATBOT, AUDIOTRACK, TTS, SERMON, AND SCRIPTURE TESTS PASSED SUCCESSFULLY!")
 
 if __name__ == "__main__":
     test_liturgical_features_workflow()

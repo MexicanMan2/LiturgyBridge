@@ -238,3 +238,15 @@ The project should allow contributions from:
 - clergy
 - musicians
 - community members
+
+---
+
+# Future Extensions
+
+The following are long-term, high-impact features to be scheduled after Phase 7:
+
+*   **Multilingual Orthodox Bible Database & API:**
+    *   Integrate full-text public-domain Bibles (Elisabeth Bible in Church Slavonic, Synodal Russian translation, Ukrainian Ogienko version, German Luther 1912 / Einheitsübersetzung, and English KJV/OSB).
+    *   Expose a public, free REST API (`GET /api/v1/bible/...`) to serve aligned multilingual scripture passages for global developers.
+*   **Liturgical Chant Archive:**
+    *   A public audio registry for community-uploaded sheet music and choir recordings mapped to the Menaion/Oktoechos.

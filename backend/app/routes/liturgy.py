@@ -278,6 +278,13 @@ def get_service_details(
                 db_keys.append(rk)
                 reverse_mapping[rk] = rk
         
+        # Dynamically resolve any missing scripture keys
+        for key in db_keys:
+            if key.startswith("scripture.epistle.") or key.startswith("scripture.gospel."):
+                if not session.get(TextItem, key):
+                    from backend.app.services.scripture_resolver import resolve_scripture_passage
+                    resolve_scripture_passage(key, session)
+        
         if db_keys:
             # Query base texts
             texts_query = select(TextItem).where(TextItem.key.in_(db_keys))
