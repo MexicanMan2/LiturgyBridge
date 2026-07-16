@@ -59,13 +59,15 @@ LiturgyBridge aims to build a bridge between tradition and accessibility.
 
 ## Project status
 
-🚧 Early planning and concept phase.
+🚧 Core Backend and Liturgical Engines Implemented.
 
-The project is currently focused on:
-- defining architecture
-- collecting requirements
-- designing data structures
-- researching liturgical resources and licenses
+The project has completed Phase 0-4 of the roadmap:
+- **Liturgical Database & Seeding**: Divine Liturgy template, aligned translations, and binary audio tracks fully seeded in PostgreSQL.
+- **Theological Calendar Engine**: Julian/Gregorian dates, Pascha calculation (Meeus' algorithm), Oktoechos Tone rotation, and daily readings resolution.
+- **Interchangeable AI Strategies**: Strategy pattern interfaces for LLM (Gemini/Claude) and cloud-based TTS (Google/OpenAI).
+- **Audio Guides & Translations**: Dynamic sermon editing, automatic multilingual translation (excluding Church Slavonic), and database BLOB streaming endpoints.
+
+We are currently working on frontend client views and real-time WebSocket service synchronization.
 
 ---
 
