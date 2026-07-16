@@ -7,7 +7,7 @@ with real, verbatim German and Church Slavonic texts for all 32 parts.
 import uuid
 from sqlmodel import Session, select
 from backend.app.database import engine
-from backend.app.models import Community, LiturgicalTemplate, TextItem, TranslationItem, AudioTrack
+from backend.app.models import User, Community, LiturgicalTemplate, TextItem, TranslationItem, AudioTrack
 
 # Full sequential text items of the Divine Liturgy
 liturgy_data = [
@@ -191,6 +191,33 @@ def seed_complete_liturgy():
     print("=" * 80)
 
     with Session(engine) as session:
+        print("Seeding community and priest...")
+        # Create or fetch default community
+        comm = session.get(Community, uuid.UUID("87a935b6-6124-4f7c-8b9c-8605ef4dad87"))
+        if not comm:
+            comm = Community(
+                id=uuid.UUID("87a935b6-6124-4f7c-8b9c-8605ef4dad87"),
+                name="Kathedrale zum Hl. Nikolaus",
+                location="Berlin, Deutschland"
+            )
+            session.add(comm)
+            session.commit()
+            session.refresh(comm)
+
+        # Create or fetch default priest user
+        priest = session.get(User, uuid.UUID("d56ba13b-8512-4eb1-b92c-f9be88a101f3"))
+        if not priest:
+            priest = User(
+                id=uuid.UUID("d56ba13b-8512-4eb1-b92c-f9be88a101f3"),
+                name="Vater Alexej",
+                email="alexej@nikolaus-kathedrale.de",
+                sso_provider="nextcloud",
+                external_user_id="nc_alexej"
+            )
+            session.add(priest)
+            session.commit()
+            session.refresh(priest)
+
         # Seeding TextItems and TranslationItems
         for key, category, slavonic, german in liturgy_data:
             # 1. Upsert TextItem

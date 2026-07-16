@@ -315,6 +315,38 @@ def get_liturgy_preview_client():
             transform: none !important;
         }
 
+        /* Role Badges */
+        .role-badge {
+            font-size: 0.68rem;
+            font-weight: 600;
+            padding: 1px 7px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            display: inline-flex;
+            align-items: center;
+        }
+        .role-priest {
+            background: rgba(212, 175, 55, 0.08);
+            color: var(--accent-color);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+        .role-choir {
+            background: rgba(59, 130, 246, 0.08);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        .role-congregation {
+            background: rgba(16, 185, 129, 0.08);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        .role-dialogue {
+            background: rgba(139, 92, 246, 0.08);
+            color: #a78bfa;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
         @keyframes pulse-gold {
             0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4); }
             70% { box-shadow: 0 0 0 10px rgba(212, 175, 55, 0); }
@@ -623,6 +655,8 @@ def get_liturgy_preview_client():
                         const audioUrl = textItem.audio_url || "";
                         
                         const title = formatKeyTitle(key);
+                        const roles = getLiturgicalRoles(key);
+                        const rolesHtml = roles.map(r => `<span class="role-badge ${r.class}">${r.text}</span>`).join(" ");
 
                         const card = document.createElement("div");
                         card.className = "card";
@@ -632,7 +666,10 @@ def get_liturgy_preview_client():
                             <div class="card-header" onclick="toggleCard('${key}')">
                                 <div class="card-header-left">
                                     <div class="index-badge">${index}</div>
-                                    <div class="section-title">${title}</div>
+                                    <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">
+                                        <div class="section-title">${title}</div>
+                                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">${rolesHtml}</div>
+                                    </div>
                                 </div>
                                 <div class="card-header-controls" onclick="event.stopPropagation()">
                                     ${audioUrl ? `
@@ -707,6 +744,63 @@ def get_liturgy_preview_client():
             "prayer_ambo": "Gebet hinter dem Ambo",
             "dismissal": "Entlassung"
         };
+
+        function getLiturgicalRoles(key) {
+            const priestKeys = [
+                "opening_blessing", 
+                "sermon_placeholder", 
+                "communion.elevation", 
+                "prayer_ambo"
+            ];
+            const choirKeys = [
+                "first_antiphon", 
+                "second_antiphon", 
+                "third_antiphon", 
+                "tonal_troparion", 
+                "alleluia_ref", 
+                "cherubic_hymn", 
+                "anaphora.sanctus", 
+                "communion.response", 
+                "communion.koinonikon", 
+                "communion.post_communion", 
+                "thanksgiving_hymn"
+            ];
+            const congregationKeys = [
+                "creed", 
+                "lords_prayer"
+            ];
+            const dialogueKeys = [
+                "great_litany", 
+                "small_litany_1", 
+                "small_litany_2", 
+                "small_entrance", 
+                "trisagion", 
+                "tonal_prokeimenon", 
+                "epistle_reading", 
+                "gospel_reading", 
+                "litany_supplication", 
+                "anaphora.dialogue", 
+                "anaphora.institution", 
+                "anaphora.epiklesis", 
+                "hymn_to_theotokos", 
+                "communion.invitation", 
+                "dismissal"
+            ];
+
+            for (const k of priestKeys) {
+                if (key.includes(k)) return [{ text: "Priester", class: "role-priest" }];
+            }
+            for (const k of choirKeys) {
+                if (key.includes(k)) return [{ text: "Chor", class: "role-choir" }];
+            }
+            for (const k of congregationKeys) {
+                if (key.includes(k)) return [{ text: "Gemeinde", class: "role-congregation" }];
+            }
+            for (const k of dialogueKeys) {
+                if (key.includes(k)) return [{ text: "Wechselgesang", class: "role-dialogue" }];
+            }
+            return [];
+        }
 
         function formatKeyTitle(key) {
             // Find traditional German translation

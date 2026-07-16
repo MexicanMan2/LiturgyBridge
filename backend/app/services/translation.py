@@ -61,8 +61,8 @@ class TranslationService:
                 f"from {source_lang} to {target_lang}. Return ONLY the direct translation. Do not write "
                 f"introductory phrases, explanations, or quotes.\n\nText:\n{text}"
             )
-            # LLMProvider generate_response is synchronous
-            translated = llm.generate_response(prompt)
+            # LLMProvider generate_text is synchronous
+            translated = llm.generate_text(prompt)
             if translated:
                 cleaned = translated.strip().strip('"').strip("'").strip()
                 if cleaned:
@@ -84,7 +84,7 @@ class TranslationService:
                 f"of the following section: '{context}'. Keep the explanation short, informative, "
                 f"and easy to understand for average church visitors."
             )
-            explanation = llm.generate_response(prompt)
+            explanation = llm.generate_text(prompt)
         except Exception:
             explanation = f"Explanation of {term} within the context of {context}."
 
