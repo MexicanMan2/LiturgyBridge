@@ -511,6 +511,7 @@ export default {
         const newActiveKey = data.service.current_section_key;
         if (newActiveKey && newActiveKey !== this.activeSectionKey) {
           this.activeSectionKey = newActiveKey;
+          this.expandedCards.clear();
           this.expandedCards.add(newActiveKey);
 
           // Scroll to the active element card smoothly
@@ -548,6 +549,7 @@ export default {
     },
     async updateActiveStepOnServer(key) {
       this.activeSectionKey = key;
+      this.expandedCards.clear();
       this.expandedCards.add(key);
 
       // Scroll to it locally
