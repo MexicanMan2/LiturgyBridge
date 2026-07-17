@@ -373,7 +373,7 @@ def get_liturgy_preview_client():
         }
 
         .card.expanded .card-content {
-            max-height: 600px; /* Adjust if needed */
+            max-height: 1500px; /* Adjust if needed */
         }
 
         .columns-container {
@@ -678,6 +678,23 @@ def get_liturgy_preview_client():
                         const roles = getLiturgicalRoles(key);
                         const rolesHtml = roles.map(r => `<span class="role-badge ${r.class}">${r.text}</span>`).join(" ");
 
+                        // Parse theological explanation
+                        let explanationHtml = "";
+                        let infoIconHtml = "";
+                        if (textItem.explanation) {
+                            infoIconHtml = `<span title="Theologische Bedeutung: ${textItem.explanation.title}" style="font-size: 0.85rem; color: var(--accent-color); cursor: help; margin-left: 6px;">ℹ️</span>`;
+                            explanationHtml = `
+                                <div style="padding: 20px 24px 0 24px;">
+                                    <div style="background: rgba(214, 175, 55, 0.05); border: 1px dashed rgba(214, 175, 55, 0.2); border-radius: 12px; padding: 16px; font-size: 0.88rem; line-height: 1.5; color: #f3e5ab;">
+                                        <div style="display: flex; align-items: center; gap: 8px; font-weight: 600; margin-bottom: 6px; color: var(--accent-color); font-family: 'Playfair Display', serif; font-size: 0.95rem;">
+                                            <span style="font-size: 1rem;">ℹ️</span> Theologische Bedeutung: ${textItem.explanation.title}
+                                        </div>
+                                        <div style="color: #d1d5db;">${textItem.explanation.description}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
                         const card = document.createElement("div");
                         card.className = "card";
                         card.id = `card-${key}`;
@@ -687,7 +704,10 @@ def get_liturgy_preview_client():
                                 <div class="card-header-left">
                                     <div class="index-badge">${index}</div>
                                     <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">
-                                        <div class="section-title">${title}</div>
+                                        <div style="display: flex; align-items: center; gap: 4px;">
+                                            <div class="section-title">${title}</div>
+                                            ${infoIconHtml}
+                                        </div>
                                         <div style="display: flex; gap: 6px; flex-wrap: wrap;">${rolesHtml}</div>
                                     </div>
                                 </div>
@@ -706,6 +726,7 @@ def get_liturgy_preview_client():
                                 </div>
                             </div>
                             <div class="card-content">
+                                ${explanationHtml}
                                 <div class="columns-container">
                                     <div class="column">
                                         <div class="column-header">Kirchenslawisch (cu)${cuSourceLabel}</div>

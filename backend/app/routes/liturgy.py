@@ -277,6 +277,143 @@ def get_source_index(key: str, lang: str) -> Optional[int]:
         
     return None
 
+LITURGICAL_EXPLANATIONS = {
+    "liturgy.opening_blessing": {
+        "title": "Eröffnungssegen",
+        "description": "Die Liturgie beginnt mit der feierlichen Proklamation des Reiches Gottes. Der Priester zeichnet mit dem Evangelienbuch das Kreuz über den Altar und verkündet: 'Gesegnet sei das Reich des Vaters und des Sohnes und des Heiligen Geistes'. Dies zeigt, dass die Liturgie kein gewöhnliches Treffen ist, sondern der Eintritt der Gläubigen in das ewige Reich Gottes."
+    },
+    "liturgy.great_litany.lord_have_mercy": {
+        "title": "Große Ektenie (Friedensektenie)",
+        "description": "Eine Reihe von Fürbitten für den Frieden der ganzen Welt, das Heil der Seelen, die Kirche, das Land und alle Notleidenden. Die Gemeinde antwortet auf jede Bitte mit 'Herr, erbarme dich' (Kyrie eleison). Sie verbindet die Anwesenden im gemeinsamen Gebet für die Schöpfung."
+    },
+    "liturgy.first_antiphon.refrain": {
+        "title": "Erstes Antiphon",
+        "description": "Traditionell Psalm 103 ('Lobe den Herrn, meine Seele'). Ein Lobgesang des Dankes für Gottes Wohltaten an den Menschen und Seine Barmherzigkeit. Die Antiphone wurden historisch während der Prozession der Gemeinde zur Kirche gesungen."
+    },
+    "liturgy.small_litany_1": {
+        "title": "Erste Kleine Ektenie",
+        "description": "Eine kurze Zusammenfassung der Fürbitten, die dazu dient, die Konzentration der Gemeinde aufrechtzuerhalten und die Gesänge der Antiphone miteinander zu verbinden."
+    },
+    "liturgy.second_antiphon.refrain": {
+        "title": "Zweites Antiphon",
+        "description": "Traditionell Psalm 146, gefolgt vom berühmten Hymnus 'Einziggeborener Sohn' (geschrieben von Kaiser Justinian im 6. Jahrhundert). Dieser Hymnus fasst die orthodoxe Lehre von der Menschwerdung Christi und Seiner Erlösungstat zusammen."
+    },
+    "liturgy.small_litany_2": {
+        "title": "Zweite Kleine Ektenie",
+        "description": "Eine weitere kurze Ektenie zur Vorbereitung auf das dritte Antiphon und den Kleinen Einzug."
+    },
+    "liturgy.third_antiphon.beatitudes": {
+        "title": "Drittes Antiphon (Seligpreisungen)",
+        "description": "Die Seligpreisungen aus der Bergpredigt Christi (Matthäus 5,3-12). Sie zeigen den Weg des christlichen Lebens auf und bereiten die Gläubigen darauf vor, Christus im herantragenden Evangelienbuch zu begegnen."
+    },
+    "liturgy.small_entrance.verse": {
+        "title": "Kleiner Einzug (Einzug mit dem Evangelium)",
+        "description": "Der Priester trägt das geschlossene Evangelienbuch in einer feierlichen Prozession durch die Kirche. Dies symbolisiert das öffentliche Auftreten Christi in der Welt und Seinen Beginn der Predigt des Reiches Gottes."
+    },
+    "oktoechos.": {
+        "title": "Hymnen des Tages (Troparion & Kontakion)",
+        "description": "Gesänge, die das Fest des Tages oder den Wochenton (aus dem Oktoechos-System der 8 Töne) feiern. Sie fassen das theologische Thema des Sonntags oder Heiligenfestes poetisch zusammen."
+    },
+    "liturgy.trisagion.main": {
+        "title": "Dreimalheilig-Hymnus (Trisagion)",
+        "description": "Der uralte Lobpreis 'Heiliger Gott, heiliger Starker, heiliger Unsterblicher, erbarme dich unser', der dreimal gesungen wird. Er richtet sich an die Allerheiligste Dreifaltigkeit und verbindet den Gesang der Gemeinde mit dem Lobpreis der Engel im Himmel."
+    },
+    "oktoechos.tone_": {
+        "title": "Prokeimenon",
+        "description": "Ein kurzer Psalmvers, der im Wechsel zwischen Lektor und Chor gesungen wird. Er dient als Ankündigung und thematische Hinführung zur unmittelbar folgenden Lesung aus den Briefen der Apostel."
+    },
+    "scripture.epistle.": {
+        "title": "Epistellesung (Apostel)",
+        "description": "Die Lesung aus den Briefen der Apostel (Apostelgeschichte, Paulusbriefe oder Katholische Briefe). Sie vermittelt die Lehre der Urkirche und bereitet den Verstand auf das Hören des Evangeliums vor."
+    },
+    "liturgy.alleluia_ref": {
+        "title": "Halleluja-Ruf",
+        "description": "Ein feierlicher Gesang des Jubels vor der Verkündung des Evangeliums. Währenddessen findet die Inzens (Beweihräucherung) der Kirche statt, was die Gegenwart des Heiligen Geistes symbolisiert."
+    },
+    "scripture.gospel.": {
+        "title": "Evangelienlesung",
+        "description": "Der Höhepunkt des Wortgottesdienstes (Liturgie der Katechumenen). Der Priester liest aus den Evangelien vor. Es symbolisiert, dass Christus selbst durch Seine Worte direkt zur versammelten Gemeinde spricht."
+    },
+    "liturgy.sermon_placeholder": {
+        "title": "Predigt (Homilie)",
+        "description": "Die Auslegung der gehörten Schriftworte durch den Priester. Sie schlägt die Brücke zwischen dem biblischen Text und dem praktischen täglichen Leben der Gläubigen."
+    },
+    "liturgy.cherubic_hymn.main": {
+        "title": "Cherubim-Hymnus & Großer Einzug",
+        "description": "Der Chor singt den geheimnisvollen Hymnus, der die Gemeinde auffordert, alle irdischen Sorgen abzulegen, da sie die Cherubim der Engelwelt abbilden. Währenddessen trägt der Priester Brot und Wein in feierlicher Prozession (Großer Einzug) zum Altar. Dies symbolisiert den Weg Christi zum Kreuz und Seinem Grab."
+    },
+    "liturgy.litany_supplication": {
+        "title": "Ektenie der Rüstung (Bitt-Ektenie)",
+        "description": "Gebete für einen vollkommenen, heiligen und friedlichen Tag sowie für einen christlichen und unbescholtenen Ausgang des Lebens. Sie bereitet die Gemeinde auf das eucharistische Opfer vor."
+    },
+    "liturgy.creed.main": {
+        "title": "Glaubensbekenntnis (Credo)",
+        "description": "Das Glaubensbekenntnis von Nikaia-Konstantinopel (325/381 n. Chr.). Die gesamte Gemeinde bekennt gemeinsam die Grundlagen ihres christlichen Glaubens als Voraussetzung für die Teilnahme am eucharistischen Mahl."
+    },
+    "liturgy.anaphora.dialogue": {
+        "title": "Eucharistisches Hochgebet (Anaphora-Dialog)",
+        "description": "Der Beginn des Hochgebets. Der Priester ruft: 'Lasset uns die Herzen erheben!' und die Gemeinde antwortet: 'Wir haben sie beim Herrn'. Es folgt die Aufforderung, dem Herrn zu danken, da die Eucharistie ('Danksagung') ein Akt des Dankes ist."
+    },
+    "liturgy.anaphora.sanctus": {
+        "title": "Sanctus (Heilig-Ruf)",
+        "description": "Der Chor singt: 'Heilig, heilig, heilig ist der Herr Zebaoth'. Dies ist der Gesang der Engel aus der Vision des Jesaja und dem Einzug in Jerusalem ('Hosanna in der Höhe'), bei dem Himmel und Erde im Lobpreis vereint werden."
+    },
+    "liturgy.anaphora.institution": {
+        "title": "Einsetzungsworte",
+        "description": "Der Priester spricht laut die Worte Christi beim Letzten Abendmahl: 'Nehmet, esset, das ist mein Leib...' und 'Trinket alle daraus, das ist mein Blut...'. Dies ruft das historische Opfer Christi ins Gedächtnis."
+    },
+    "liturgy.anaphora.epiklesis": {
+        "title": "Epiklesis (Herabrufung des Heiligen Geistes)",
+        "description": "Der wichtigste und heiligste Moment der Liturgie. Der Priester bittet Gott, Seinen Heiligen Geist auf die Gaben und auf die Gemeinde herabzusenden, um das Brot in den wahren Leib Christi und den Wein in das wahre Blut Christi zu verwandeln."
+    },
+    "liturgy.hymn_to_theotokos": {
+        "title": "Muttergottes-Hymnus (Axion Estin)",
+        "description": "Ein Lobpreis der Gottesgebärerin Maria (traditionell 'In Wahrheit ist es würdig, dich seligzupreisen...'). Die Kirche ehrt Maria als die erste und größte der Erlösten."
+    },
+    "liturgy.lords_prayer.main": {
+        "title": "Das Vaterunser",
+        "description": "Das Gebet des Herrn, das die Gläubigen gemeinsam sprechen. Als adoptierte Kinder Gottes beten sie um das tägliche Brot (auch verstanden als das eucharistische Brot des Lebens) und um Vergebung."
+    },
+    "liturgy.communion.elevation": {
+        "title": "Erhebung der Gaben ('Das Heilige den Heiligen')",
+        "description": "Der Priester erhebt das eucharistische Brot über den Diskos und ruft: 'Das Heilige den Heiligen!'. Dies erinnert daran, dass die heiligen Gaben für diejenigen bestimmt sind, die durch Taufe und Glauben geheiligt wurden."
+    },
+    "liturgy.communion.response": {
+        "title": "Antwort des Chores",
+        "description": "Der Chor antwortet demütig: 'Einer ist heilig, einer ist der Herr: Jesus Christus...' Dies zeigt, dass kein Mensch aus eigener Kraft würdig ist, sondern nur durch die Gnade Christi."
+    },
+    "liturgy.communion.koinonikon": {
+        "title": "Kommuniongesang (Koinonikon)",
+        "description": "Ein Psalmvers, der gesungen wird, während der Klerus im Altarraum kommuniziert. Er dient der Meditation über das Geheimnis der Gemeinschaft mit Gott."
+    },
+    "liturgy.communion.invitation": {
+        "title": "Einladung zur Kommunion",
+        "description": "Der Priester tritt mit dem Kelch aus der Königstür und ruft: 'Mit Gottesfurcht, Glauben und Liebe tretet herbei!'. Dies ist der Ruf an die Gläubigen, sich dem Altar zu nähern und die Heilige Kommunion zu empfangen."
+    },
+    "liturgy.communion.post_communion": {
+        "title": "Danksagung nach der Kommunion",
+        "description": "Gesänge der Freude und des Lichts nach dem Empfang der Gaben ('Wir haben das wahre Licht gesehen, wir haben den himmlischen Geist empfangen...')."
+    },
+    "liturgy.thanksgiving_hymn": {
+        "title": "Dankhymnus des Chores",
+        "description": "Ein Lobpreis des Chores ('Es erfülle sich unser Mund mit deinem Lobpreis...'), der Gott dafür dankt, dass er die Gläubigen Seiner unsterblichen und lebensspendenden Geheimnisse teilhaftig gemacht hat."
+    },
+    "liturgy.prayer_ambo": {
+        "title": "Gebet hinter dem Ambo",
+        "description": "Der Priester verlässt den Altarraum und spricht inmitten der Gemeinde ein zusammenfassendes Gebet für das Heil der ganzen Kirche. Es zeigt, dass der Segen der Liturgie in die Welt hinausgetragen werden soll."
+    },
+    "liturgy.dismissal": {
+        "title": "Entlassung (Segen & Entlassung)",
+        "description": "Der Priester spendet den Segen und entlässt die Gläubigen mit den Worten 'Lasset uns in Frieden gehen'. Die Liturgie endet nicht, sondern setzt sich fort im 'Dienst nach der Liturgie' – dem christlichen Zeugnis im Alltag."
+    }
+}
+
+def get_liturgical_explanation(key: str) -> Optional[Dict[str, str]]:
+    for prefix, info in LITURGICAL_EXPLANATIONS.items():
+        if key.startswith(prefix):
+            return info
+    return None
+
 @router.get("/services/{service_id}")
 def get_service_details(
     service_id: uuid.UUID,
@@ -418,13 +555,17 @@ def get_service_details(
                     default_lang = "de"
                 default_idx = get_source_index(bt.key, default_lang)
 
+                # Get theological explanation
+                explanation = get_liturgical_explanation(bt.key)
+
                 resolved_texts[original_key] = {
                     "category": bt.category,
                     "default_text": bt.default_text,
                     "default_text_source_index": default_idx,
                     "translations": translations,
                     "translation_source_indices": trans_source_indices,
-                    "audio_url": selected_audio
+                    "audio_url": selected_audio,
+                    "explanation": explanation
                 }
 
     return {
