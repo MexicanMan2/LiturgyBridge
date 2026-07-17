@@ -486,6 +486,36 @@ A priest must be free to preach in their preferred language. To make the sermon 
 
 ---
 
+# Decision 029 - OIDC SSO with Nextcloud Group-to-Role Mapping
+
+## Decision
+
+LiturgyBridge delegates user authentication to a parish's Nextcloud instance using the OpenID Connect (OIDC) / OAuth 2.0 protocol. The backend OIDC callback endpoint:
+1. Dynamically handles the authorization code exchange via standard POST parameters (for maximum PHP library compatibility).
+2. Dynamically queries Nextcloud's OCS API (`/ocs/v2.php/cloud/user`) to retrieve the user's details and group memberships.
+3. Automatically maps Nextcloud groups to local LiturgyBridge roles (e.g., Nextcloud group `admin` -> `admin`/`editor`, group `clergy`/`priests` -> `priest`, group `choir` -> `choir`).
+4. Generates a local JWT token (HS256, signed using `JWT_SECRET`) containing the user's name, email, and mapped roles to secure downstream API endpoints.
+
+## Reason
+
+Delegating authentication to Nextcloud ensures LiturgyBridge doesn't store sensitive password hashes or manage user registrations directly, complying with GDPR/data privacy guidelines. Automatically mapping Nextcloud groups to LiturgyBridge roles ensures that parish secretaries can manage all user permissions directly in their pre-existing Nextcloud Admin interface without needing a separate user panel in LiturgyBridge.
+
+---
+
+# Decision 030 - Native Direct Authentication & Onboarding Flow
+
+## Decision
+
+To support a seamless user experience where new parishioners can register and log in directly inside the LiturgyBridge Vue client without being redirected away to Nextcloud's login page, the system will support a *Direct Credential Verification* fallback. 
+1. **Direct Login**: The Vue client collects username/password in a native modal. The LiturgyBridge backend verifies these credentials by sending an authenticated request to Nextcloud's OCS API. If Nextcloud validates the credentials, LiturgyBridge generates the local session JWT.
+2. **Onboarding / Self-Registration**: New users can submit a registration form in the Vue client. The backend will use Nextcloud's Provisioning API to create a new user account in Nextcloud in a disabled/pending state. Parish administrators can approve the user directly inside the LiturgyBridge dashboard, which enables the Nextcloud account and assigns them to the default `members` group.
+
+## Reason
+
+Redirecting users to Nextcloud's default login screen disrupts the user experience, especially on mobile devices. Allowing native credentials inputs and self-registration forms inside the LiturgyBridge interface keeps the experience unified and professional while maintaining Nextcloud as the single source of truth for passwords and groups.
+
+---
+
 # Future Decisions
 
 Future decisions should be documented when they affect:
@@ -496,3 +526,4 @@ Future decisions should be documented when they affect:
 - user experience
 - licensing
 - technology choices
+

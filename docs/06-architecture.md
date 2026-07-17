@@ -255,6 +255,14 @@ Integrates LiturgyBridge with existing community infrastructure instead of self-
 Connectors:
 
 - **Identity (OIDC/OAuth2):** Delegates authentication to community systems (e.g., Nextcloud, ChurchTools).
+  *   **Implementation Status:** Fully implemented OIDC Authorization Code Flow with Nextcloud SSO (handling OCS endpoint `/ocs/v2.php/cloud/user` for profile and group retrievals).
+  *   **Endpoints:** `/auth/login` (authorization redirect), `/auth/callback` (token exchange & OCS profile fetch).
+  *   **Group Mapping:** 
+      *   Nextcloud group `admin` -> LiturgyBridge roles `admin`, `editor`
+      *   Nextcloud group `priests` or `clergy` -> LiturgyBridge role `priest` (gains access to Live Controller and Sermon Editor)
+      *   Nextcloud group `choir` -> LiturgyBridge role `choir`
+      *   Default authenticated -> LiturgyBridge role `member`
+  *   **Session Token:** Secure JWT token (HS256) issued by LiturgyBridge containing user name, email, and roles, validated via backend dependency `get_current_user`.
 - **Calendar (iCal/ICS):** Periodically pulls events from parish calendars, mapping them to Liturgical Services.
 - **Storage (Nextcloud/WebDAV):** Serves resource directories (like choir sheet music) directly from external cloud folders.
 - **Notification Router:** Relays platform announcements and schedule changes via external chat channels (Telegram, Signal, WhatsApp bots).
