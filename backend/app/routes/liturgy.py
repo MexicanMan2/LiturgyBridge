@@ -234,6 +234,49 @@ def create_service(service_in: ServiceCreate, session: Session = Depends(get_ses
     session.refresh(db_service)
     return db_service
 
+BIBLIOGRAPHY = {
+    "1": "Orthodoxe Bischofskonferenz in Deutschland (OBKD) - Offizielle deutsche Liturgie-Übersetzung",
+    "2": "Kirchenslawischer Sluzhebnik (Служебникъ) - Offizielles orthodoxes Priester-Altarbuch",
+    "3": "Kirchenslawische Elisabeth-Bibel (Елизаветинская Библия, 1751) - Heilige Schrift für den slawischen orthodoxen gottesdienstlichen Gebrauch",
+    "4": "Deutsche Einheitsübersetzung (EÜ) - Standardwerk der biblischen Lesungstexte",
+    "5": "English King James Version (KJV) - Traditional English biblical translations",
+    "6": "English Orthodox Study Bible (OSB) - Liturgically aligned English translations",
+    "7": "Russische Synodale Bibelübersetzung (Синодальный перевод, 1876)",
+    "8": "Ukrainische Bibelübersetzung von Metropolit Ilarion (Ogienko, 1962)",
+    "9": "Lokaler Gemeindekontext (Predigt / eigene Ankündigungen / Notizen)"
+}
+
+def get_source_index(key: str, lang: str) -> Optional[int]:
+    # Local context / sermons / custom announcements
+    if "sermon" in key or "announcement" in key:
+        return 9
+    
+    # Scripture readings
+    if key.startswith("scripture."):
+        if lang == "de":
+            return 4  # Einheitsübersetzung
+        elif lang == "cu":
+            return 3  # Elisabeth-Bibel
+        elif lang == "ru":
+            return 7  # Russian Synodal
+        elif lang == "uk":
+            return 8  # Ogienko
+        elif lang == "en":
+            return 5  # KJV
+        return None
+        
+    # Standard Liturgy / Oktoechos hymnal texts
+    if key.startswith("liturgy.") or key.startswith("oktoechos."):
+        if lang == "de":
+            return 1  # OBKD
+        elif lang == "cu":
+            return 2  # Sluzhebnik
+        elif lang == "en":
+            return 6  # OSB
+        return None
+        
+    return None
+
 @router.get("/services/{service_id}")
 def get_service_details(
     service_id: uuid.UUID,
@@ -361,17 +404,34 @@ def get_service_details(
                         escaped_text = urllib.parse.quote(translation_text)
                         selected_audio = f"/api/v1/liturgy/tts?text={escaped_text}&language={target_lang}"
                 
+                # Determine translation source indices dynamically
+                trans_source_indices = {}
+                translations = trans_map.get(bt.key, {})
+                for lang in translations.keys():
+                    idx = get_source_index(bt.key, lang)
+                    if idx:
+                        trans_source_indices[lang] = idx
+
+                # Determine default text source index
+                default_lang = "en"
+                if bt.key.startswith("scripture."):
+                    default_lang = "de"
+                default_idx = get_source_index(bt.key, default_lang)
+
                 resolved_texts[original_key] = {
                     "category": bt.category,
                     "default_text": bt.default_text,
-                    "translations": trans_map.get(bt.key, {}),
+                    "default_text_source_index": default_idx,
+                    "translations": translations,
+                    "translation_source_indices": trans_source_indices,
                     "audio_url": selected_audio
                 }
 
     return {
         "service": service,
         "template": template,
-        "texts": resolved_texts
+        "texts": resolved_texts,
+        "sources_bibliography": BIBLIOGRAPHY
     }
 
 @router.patch("/services/{service_id}", response_model=LiturgicalService)

@@ -88,8 +88,8 @@ def get_liturgy_preview_client():
             ).first()
             
             if not template:
-                from backend.app.seed_complete_liturgy import seed_complete_liturgy
-                seed_complete_liturgy()
+                from backend.app.seed_liturgy import seed_database
+                seed_database()
                 template = session.exec(
                     select(LiturgicalTemplate).where(LiturgicalTemplate.name == "Göttliche Liturgie des Hl. Johannes Chrysostomus")
                 ).first()
@@ -577,6 +577,16 @@ def get_liturgy_preview_client():
         <!-- Dynamic Cards Inserted Here -->
     </main>
 
+    <!-- Quellenverzeichnis / Bibliographie -->
+    <section id="bibliography-container" style="width: 100%; max-width: 900px; padding: 0 20px 20px 20px; z-index: 10; margin-top: 10px;">
+        <div style="background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid var(--glass-border); border-radius: 16px; padding: 24px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);">
+            <h2 style="font-family: 'Playfair Display', serif; font-weight: 600; font-size: 1.3rem; color: var(--accent-color); margin-top: 0; margin-bottom: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 10px;">Quellenverzeichnis / Bibliographie</h2>
+            <ul id="bibliography-list" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; font-size: 0.88rem; color: var(--text-muted); line-height: 1.4;">
+                <!-- Dynamic Bibliography Items Inserted Here -->
+            </ul>
+        </div>
+    </section>
+
     <!-- Floating Audio Dashboard -->
     <div class="player-bar" id="global-player">
         <div class="player-info">
@@ -654,6 +664,16 @@ def get_liturgy_preview_client():
                         const germanText = textItem.translations.de || "";
                         const audioUrl = textItem.audio_url || "";
                         
+                        // Parse source indexes
+                        const cuSourceIdx = (textItem.translation_source_indices && textItem.translation_source_indices.cu) ? textItem.translation_source_indices.cu : "";
+                        const deSourceIdx = (textItem.translation_source_indices && textItem.translation_source_indices.de) ? textItem.translation_source_indices.de : "";
+
+                        const cuSourceText = cuSourceIdx ? (data.sources_bibliography[cuSourceIdx] || "") : "";
+                        const deSourceText = deSourceIdx ? (data.sources_bibliography[deSourceIdx] || "") : "";
+
+                        const cuSourceLabel = cuSourceIdx ? `<span title="${cuSourceText}" style="font-size: 0.75rem; color: var(--accent-color); margin-left: 4px; vertical-align: super; font-weight: bold; cursor: help;">[${cuSourceIdx}]</span>` : "";
+                        const deSourceLabel = deSourceIdx ? `<span title="${deSourceText}" style="font-size: 0.75rem; color: var(--accent-color); margin-left: 4px; vertical-align: super; font-weight: bold; cursor: help;">[${deSourceIdx}]</span>` : "";
+
                         const title = formatKeyTitle(key);
                         const roles = getLiturgicalRoles(key);
                         const rolesHtml = roles.map(r => `<span class="role-badge ${r.class}">${r.text}</span>`).join(" ");
@@ -688,11 +708,11 @@ def get_liturgy_preview_client():
                             <div class="card-content">
                                 <div class="columns-container">
                                     <div class="column">
-                                        <div class="column-header">Kirchenslawisch (cu)</div>
+                                        <div class="column-header">Kirchenslawisch (cu)${cuSourceLabel}</div>
                                         <div class="text-slavonic">${slavonicText}</div>
                                     </div>
                                     <div class="column">
-                                        <div class="column-header">Deutsch (de)</div>
+                                        <div class="column-header">Deutsch (de)${deSourceLabel}</div>
                                         <div class="text-german">${germanText}</div>
                                     </div>
                                 </div>
@@ -704,6 +724,19 @@ def get_liturgy_preview_client():
                         index++;
                     });
                 });
+
+                // Populate Sources Bibliography
+                const bibList = document.getElementById("bibliography-list");
+                if (bibList && data.sources_bibliography) {
+                    bibList.innerHTML = "";
+                    Object.entries(data.sources_bibliography).forEach(([idx, text]) => {
+                        const li = document.createElement("li");
+                        li.style.display = "flex";
+                        li.style.gap = "8px";
+                        li.innerHTML = `<span style="color: var(--accent-color); font-weight: 600; min-width: 25px;">[${idx}]</span> <span>${text}</span>`;
+                        bibList.appendChild(li);
+                    });
+                }
             } catch (err) {
                 console.error(err);
                 document.getElementById("service-date").textContent = "FEHLER BEIM VERBINDUNGSAUFBAU";
