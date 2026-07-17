@@ -54,35 +54,10 @@
 
       <!-- Priest Control Panel -->
       <div v-if="isPriest || isAdmin" class="w-full bg-slate-900/60 backdrop-blur-xl border border-amber-500/30 rounded-2xl p-5 mb-8 text-left shadow-2xl">
-        <div class="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
-          <h3 class="font-serif text-lg font-semibold text-amber-500 flex items-center gap-2">
-            <span>🎛️</span> Live-Gottesdienst Steuerung
-          </h3>
-          <span class="text-xs bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Priester-Modus</span>
-        </div>
-
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div class="flex items-center gap-4">
-            <button @click="advanceLiturgy(-1)" :disabled="currentSectionIndex <= 0" class="btn-control bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed">
-              ◀ Zurück
-            </button>
-            <button @click="advanceLiturgy(1)" :disabled="currentSectionIndex >= liturgySections.length - 1" class="btn-control bg-amber-500 text-black hover:bg-amber-400 disabled:opacity-30 disabled:cursor-not-allowed font-bold">
-              Vorwärts ▶
-            </button>
-          </div>
-
-          <div class="text-sm">
-            <span class="text-gray-400">Aktueller Schritt:</span>
-            <span class="text-amber-500 font-bold ml-2 font-serif text-base">
-              {{ formatKeyTitle(activeSectionKey) }}
-            </span>
-          </div>
-        </div>
-
         <!-- Sermon Editor Collapsible -->
-        <div class="mt-5 border-t border-white/5 pt-4">
+        <div>
           <button @click="showSermonEditor = !showSermonEditor" class="text-xs text-amber-500 hover:underline flex items-center gap-1">
-            <span>{{ showSermonEditor ? '▼' : '▶' }}</span> Predigt für Sonntag editieren
+            <span>{{ showSermonEditor ? '▼' : '▶' }}</span> Predigt für Sonntag editieren (Übersetzungen & Audio generieren)
           </button>
           
           <div v-if="showSermonEditor" class="mt-3 flex flex-col gap-3">
@@ -97,13 +72,7 @@
         </div>
       </div>
 
-      <!-- Visitor Autoplay Option -->
-      <div v-else class="flex justify-end mb-4">
-        <label class="flex items-center gap-2 cursor-pointer bg-slate-900/60 border border-white/5 rounded-xl px-4 py-2 hover:border-amber-500/20 transition-colors">
-          <input type="checkbox" v-model="autoplay" class="accent-amber-500 h-4 w-4 rounded border-white/10 bg-slate-950 focus:ring-0 cursor-pointer">
-          <span class="text-xs text-gray-300 select-none">🔊 Live-Schritten automatisch per Audio folgen (Autoplay)</span>
-        </label>
-      </div>
+
     </header>
 
     <!-- Main Content -->
@@ -255,27 +224,57 @@
       </section>
     </main>
 
-    <!-- Floating Audio Dashboard -->
-    <div class="player-bar" :class="currentPlayingKey ? 'active' : ''">
-      <div class="player-info">
-        <div class="player-info-title">{{ playerTitle || 'Kein Titel' }}</div>
-        <div class="player-info-status text-gray-400">{{ playerStatus || 'Bereit' }}</div>
+    <!-- Floating Audio Dashboard / Unified Controller -->
+    <div class="player-bar" :class="{ 'active': currentPlayingKey || isPriest || isAdmin }">
+      <!-- Player Info (Title, Status, Autoplay Checkbox) -->
+      <div class="player-info flex flex-col gap-1 text-left min-w-[20%] max-w-[25%]">
+        <div class="player-info-title truncate font-semibold text-xs sm:text-sm text-amber-500">
+          {{ isPriest || isAdmin ? 'Live-Steuerung' : (currentPlayingKey ? playerTitle : 'Gottesdienst-Begleiter') }}
+        </div>
+        <div class="player-info-status text-[11px] text-gray-400 leading-none mb-1">
+          {{ isPriest || isAdmin ? 'Priester-Modus' : (currentPlayingKey ? playerStatus : 'Audio inaktiv') }}
+        </div>
+        <label class="flex items-center gap-1.5 cursor-pointer text-[10px] text-gray-400 hover:text-white transition-colors select-none">
+          <input type="checkbox" v-model="autoplay" class="accent-amber-500 h-3.5 w-3.5 rounded border-white/10 bg-slate-950 focus:ring-0 cursor-pointer">
+          <span>Autoplay</span>
+        </label>
       </div>
 
-      <div class="player-controls">
+      <!-- Playback Controls (Prev Step, Play/Pause, Next Step, Stop, Timeline Seeker) -->
+      <div class="player-controls flex-grow" :class="{ 'opacity-40 pointer-events-none': !currentPlayingKey && !isPriest && !isAdmin }">
+        <!-- Previous Step (⏮ symbol) -->
+        <button 
+          @click="advanceLiturgy(-1)" 
+          :disabled="currentSectionIndex <= 0" 
+          class="btn-circle subtle" 
+          title="Vorheriger Liturgieschritt"
+        >
+          <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
+        </button>
+
         <!-- Play / Pause -->
-        <button @click="togglePlay" class="btn-circle" title="Abspielen/Pause">
+        <button @click="togglePlay" class="btn-circle" :disabled="!currentPlayingKey" title="Abspielen/Pause">
           <svg v-if="isPlaying" viewBox="0 0 24 24" class="w-4 h-4 fill-current"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
           <svg v-else viewBox="0 0 24 24" class="w-4 h-4 fill-current"><path d="M8 5v14l11-7z"/></svg>
         </button>
 
+        <!-- Next Step (⏭ symbol) -->
+        <button 
+          @click="advanceLiturgy(1)" 
+          :disabled="currentSectionIndex >= liturgySections.length - 1" 
+          class="btn-circle subtle" 
+          title="Nächster Liturgieschritt"
+        >
+          <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current"><path d="M16 6h2v12h-2zm-10.5 0 8.5 6-8.5 6z"/></svg>
+        </button>
+
         <!-- Stop -->
-        <button @click="stopAudio" class="btn-circle" title="Stoppen">
+        <button @click="stopAudio" class="btn-circle" :disabled="!currentPlayingKey" title="Stoppen">
           <svg viewBox="0 0 24 24" class="w-4 h-4 fill-current"><path d="M6 6h12v12H6z"/></svg>
         </button>
 
         <!-- Seek Slider -->
-        <div class="seek-container">
+        <div class="seek-container ml-2">
           <span class="seek-time">{{ formatTime(currentTime) }}</span>
           <input 
             type="range" 
@@ -283,15 +282,17 @@
             min="0" 
             :max="totalDuration || 100" 
             v-model="currentTime"
+            :disabled="!currentPlayingKey"
             @input="onSeek"
           >
           <span class="seek-time">{{ formatTime(totalDuration) }}</span>
         </div>
       </div>
 
-      <div class="player-options">
+      <!-- Player Options (Speed, Volume) -->
+      <div class="player-options" :class="{ 'opacity-40 pointer-events-none': !currentPlayingKey && !isPriest && !isAdmin }">
         <!-- Speed Badge -->
-        <div @click="cycleSpeed" class="speed-badge" title="Geschwindigkeit ändern">
+        <div @click="cycleSpeed" class="speed-badge" :disabled="!currentPlayingKey" title="Geschwindigkeit ändern">
           {{ playbackSpeeds[currentSpeedIndex] }}x
         </div>
         <!-- Volume -->
@@ -522,13 +523,6 @@ export default {
             }
           });
 
-          // Autoplay audio if enabled
-          if (this.autoplay && !this.isPriest) {
-            const item = this.listItems.find(i => i.key === newActiveKey);
-            if (item && item.audio_url) {
-              this.playAudio(item.key, item.audio_url, this.formatKeyTitle(item.key));
-            }
-          }
         }
       } catch (err) {
         console.error("Live-sync polling error:", err);
@@ -762,6 +756,14 @@ export default {
     }
   },
   watch: {
+    activeSectionKey(newVal) {
+      if (this.autoplay && newVal) {
+        const item = this.listItems.find(i => i.key === newVal);
+        if (item && item.audio_url) {
+          this.playAudio(item.key, item.audio_url, this.formatKeyTitle(item.key));
+        }
+      }
+    },
     autoplay(newVal) {
       localStorage.setItem('autoplay', newVal.toString());
     }
@@ -855,6 +857,16 @@ export default {
 }
 .btn-circle.playing:hover {
   background: var(--accent-hover);
+}
+.btn-circle.subtle {
+  opacity: 0.65;
+  border-color: transparent;
+  background: transparent;
+}
+.btn-circle.subtle:hover:not(:disabled) {
+  opacity: 1;
+  color: var(--accent-color);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 @keyframes pulse-gold {
