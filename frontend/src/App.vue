@@ -8,13 +8,40 @@
     <header class="relative w-full max-w-4xl px-6 pt-10 pb-4 text-center z-10">
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
         <!-- Logo and Title -->
-        <div class="text-left">
+        <div class="text-left flex flex-col gap-1.5">
           <h1 class="font-serif text-3xl sm:text-4xl font-semibold bg-gradient-to-r from-white to-amber-500 bg-clip-text text-transparent">
             {{ serviceName || 'Gottesdienst-Begleiter' }}
           </h1>
-          <p class="text-xs sm:text-sm text-gray-400 mt-1 uppercase tracking-wider font-semibold">
-            {{ serviceDate || 'LÄDT VERBINDUNG...' }}
-          </p>
+          
+          <div class="flex items-center gap-3 flex-wrap">
+            <p class="text-xs sm:text-sm text-gray-400 uppercase tracking-wider font-semibold">
+              {{ serviceDate || 'LÄDT VERBINDUNG...' }}
+            </p>
+            
+            <!-- Service Selector Dropdown -->
+            <div v-if="servicesList.length > 0" class="flex items-center gap-1.5 bg-slate-950/60 border border-white/5 rounded-lg px-2.5 py-1">
+              <span class="text-[10px] text-gray-500 uppercase font-semibold">Wechseln:</span>
+              <select 
+                v-model="serviceId" 
+                @change="loadLiturgyDetails" 
+                class="bg-transparent text-xs text-amber-500 font-semibold focus:outline-none cursor-pointer"
+              >
+                <option v-for="srv in sortedServices" :key="srv.id" :value="srv.id" class="bg-slate-950 text-white">
+                  {{ formatServiceOption(srv) }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Schedule Service Button (Priest / Admin Only) -->
+            <button 
+              v-if="isPriest || isAdmin" 
+              @click="openScheduleModal" 
+              class="bg-amber-500/10 border border-amber-500/30 text-amber-500 hover:bg-amber-500/20 text-[10px] uppercase font-bold py-1 px-2.5 rounded-lg transition-all"
+              title="Neuen Gottesdienst planen"
+            >
+              📅 Planen
+            </button>
+          </div>
         </div>
 
         <!-- Auth and Language Controls -->
@@ -312,6 +339,81 @@
         </div>
       </div>
     </div>
+
+    <!-- Schedule Service Modal -->
+    <div v-if="showScheduleModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+      <div class="bg-slate-900 border border-white/10 rounded-2xl max-w-md w-full p-6 shadow-2xl text-left transform transition-all">
+        <div class="flex items-center justify-between border-b border-white/5 pb-3 mb-4">
+          <h3 class="font-serif text-lg font-semibold text-amber-500 flex items-center gap-2">
+            <span>📅</span> Gottesdienst planen
+          </h3>
+          <button @click="showScheduleModal = false" class="text-gray-400 hover:text-white text-lg leading-none">×</button>
+        </div>
+
+        <form @submit.prevent="scheduleService" class="flex flex-col gap-4">
+          <!-- Template -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs text-gray-400">Typ / Liturgie-Vorlage</label>
+            <select 
+              v-model="newServiceTemplateId" 
+              required
+              class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500/50 cursor-pointer"
+            >
+              <option v-for="t in templatesList" :key="t.id" :value="t.id" class="bg-slate-950 text-white">{{ t.name }}</option>
+            </select>
+          </div>
+
+          <!-- Date and Time -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs text-gray-400">Datum & Uhrzeit</label>
+            <input 
+              type="datetime-local" 
+              v-model="newServiceDate" 
+              required
+              class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500/50 cursor-pointer"
+            >
+          </div>
+
+          <!-- Languages -->
+          <div class="flex flex-col gap-1.5">
+            <label class="text-xs text-gray-400">Aktive Sprachen</label>
+            <div class="grid grid-cols-2 gap-2 bg-slate-950/50 border border-white/5 rounded-xl p-3">
+              <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer select-none">
+                <input type="checkbox" value="de" v-model="newServiceLanguages" class="accent-amber-500"> Deutsch
+              </label>
+              <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer select-none">
+                <input type="checkbox" value="cu" v-model="newServiceLanguages" class="accent-amber-500"> Kirchenslawisch
+              </label>
+              <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer select-none">
+                <input type="checkbox" value="en" v-model="newServiceLanguages" class="accent-amber-500"> English
+              </label>
+              <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer select-none">
+                <input type="checkbox" value="ru" v-model="newServiceLanguages" class="accent-amber-500"> Русский
+              </label>
+              <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer select-none">
+                <input type="checkbox" value="uk" v-model="newServiceLanguages" class="accent-amber-500"> Українська
+              </label>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 border-t border-white/5 pt-4 mt-2">
+            <button 
+              type="button" 
+              @click="showScheduleModal = false" 
+              class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition-colors"
+            >
+              Abbrechen
+            </button>
+            <button 
+              type="submit" 
+              class="bg-amber-500 text-black hover:bg-amber-400 text-xs font-bold py-2.5 px-4 rounded-xl transition-colors"
+            >
+              Planen
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -358,6 +460,13 @@ export default {
       showSermonEditor: false,
       sermonText: '',
       savingSermon: false,
+      communityId: null,
+      servicesList: [],
+      templatesList: [],
+      showScheduleModal: false,
+      newServiceTemplateId: '',
+      newServiceDate: '',
+      newServiceLanguages: ['de'],
     }
   },
   computed: {
@@ -370,6 +479,9 @@ export default {
     currentSectionIndex() {
       if (!this.activeSectionKey) return -1;
       return this.liturgySections.findIndex(sec => sec.text_keys.includes(this.activeSectionKey));
+    },
+    sortedServices() {
+      return [...this.servicesList].sort((a, b) => new Date(b.scheduled_time) - new Date(a.scheduled_time));
     }
   },
   async mounted() {
@@ -451,23 +563,62 @@ export default {
     async loadLiturgy() {
       this.loading = true;
       try {
-        // Fetch latest active service
-        const latestRes = await fetch("/api/v1/liturgy/services/latest");
-        if (!latestRes.ok) throw new Error("Kein aktiver Gottesdienst gefunden.");
-        const latestService = await latestRes.json();
-        this.serviceId = latestService.id;
-        this.activeSectionKey = latestService.current_section_key;
+        // 1. Fetch all scheduled services
+        const servicesRes = await fetch("/api/v1/liturgy/services");
+        if (servicesRes.ok) {
+          this.servicesList = await servicesRes.json();
+        }
 
-        // Fetch complete translation structures
+        // 2. Fetch templates list
+        await this.loadTemplates();
+
+        // 3. Find latest service if not set
+        if (!this.serviceId) {
+          try {
+            const latestRes = await fetch("/api/v1/liturgy/services/latest");
+            if (latestRes.ok) {
+              const latestService = await latestRes.json();
+              this.serviceId = latestService.id;
+              this.communityId = latestService.community_id;
+            } else if (this.servicesList.length > 0) {
+              // Sort by date desc
+              const sorted = [...this.servicesList].sort((a, b) => new Date(b.scheduled_time) - new Date(a.scheduled_time));
+              this.serviceId = sorted[0].id;
+              this.communityId = sorted[0].community_id;
+            }
+          } catch (e) {
+            console.error("Failed to fetch latest service:", e);
+          }
+        }
+
+        if (!this.serviceId) {
+          throw new Error("Kein aktiver Gottesdienst gefunden. Bitte planen Sie einen Gottesdienst.");
+        }
+
+        // 4. Load details
+        await this.loadLiturgyDetails();
+
+      } catch (err) {
+        this.error = err.message;
+      } finally {
+        this.loading = false;
+      }
+    },
+    async loadLiturgyDetails() {
+      if (!this.serviceId) return;
+      this.loading = true;
+      try {
         const response = await fetch(`/api/v1/liturgy/services/${this.serviceId}?languages=de,cu,en,ru,uk`);
         if (!response.ok) throw new Error("Laden der Liturgie fehlgeschlagen.");
         const data = await response.json();
 
         this.serviceName = data.template.name;
+        this.communityId = data.service.community_id;
         
         const dateObj = new Date(data.service.scheduled_time);
-        this.serviceDate = `Sonntag, ${dateObj.toLocaleDateString("de-DE", {day:"numeric", month:"long", year:"numeric"})}`;
+        this.serviceDate = `${dateObj.toLocaleDateString("de-DE", {weekday:"long", day:"numeric", month:"long", year:"numeric"})} um ${dateObj.toLocaleTimeString("de-DE", {hour:"2-digit", minute:"2-digit"})}`;
         
+        this.activeSectionKey = data.service.current_section_key;
         this.liturgySections = data.template.structure.sections;
         this.sourcesBibliography = data.sources_bibliography || {};
 
@@ -488,6 +639,7 @@ export default {
         
         // Auto-expand active step
         if (this.activeSectionKey) {
+          this.expandedCards.clear();
           this.expandedCards.add(this.activeSectionKey);
         }
 
@@ -495,12 +647,96 @@ export default {
         const sermonKey = `sermon.service_${this.serviceId}`;
         if (data.texts[sermonKey]) {
           this.sermonText = data.texts[sermonKey].translations.de || '';
+        } else {
+          this.sermonText = '';
         }
       } catch (err) {
         this.error = err.message;
       } finally {
         this.loading = false;
       }
+    },
+    openScheduleModal() {
+      if (this.templatesList.length === 0) {
+        this.loadTemplates();
+      }
+      // Pre-fill date to next Sunday at 09:30
+      const nextSunday = new Date();
+      nextSunday.setDate(nextSunday.getDate() + (7 - nextSunday.getDay()) % 7);
+      nextSunday.setHours(9, 30, 0, 0);
+      
+      const pad = (n) => n.toString().padStart(2, '0');
+      this.newServiceDate = `${nextSunday.getFullYear()}-${pad(nextSunday.getMonth()+1)}-${pad(nextSunday.getDate())}T${pad(nextSunday.getHours())}:${pad(nextSunday.getMinutes())}`;
+      
+      if (this.templatesList.length > 0) {
+        this.newServiceTemplateId = this.templatesList[0].id;
+      }
+      this.showScheduleModal = true;
+    },
+    async loadTemplates() {
+      try {
+        const res = await fetch("/api/v1/liturgy/templates");
+        if (res.ok) {
+          this.templatesList = await res.json();
+          if (this.templatesList.length > 0 && !this.newServiceTemplateId) {
+            this.newServiceTemplateId = this.templatesList[0].id;
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load templates:", err);
+      }
+    },
+    async scheduleService() {
+      try {
+        const payload = {
+          template_id: this.newServiceTemplateId,
+          community_id: this.communityId || "929e9fd8-cdaf-4152-8e62-e89eb991fd6c",
+          scheduled_time: new Date(this.newServiceDate).toISOString(),
+          active_languages: this.newServiceLanguages
+        };
+
+        const res = await fetch("/api/v1/liturgy/services", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const detail = await res.json();
+          throw new Error(detail.detail || "Erstellen fehlgeschlagen.");
+        }
+
+        const newService = await res.json();
+        
+        // Refresh list
+        const servicesRes = await fetch("/api/v1/liturgy/services");
+        if (servicesRes.ok) {
+          this.servicesList = await servicesRes.json();
+        }
+
+        this.showScheduleModal = false;
+        
+        // Select newly created service
+        this.serviceId = newService.id;
+        await this.loadLiturgyDetails();
+
+      } catch (err) {
+        alert("Fehler beim Planen des Gottesdienstes: " + err.message);
+      }
+    },
+    formatServiceOption(srv) {
+      const d = new Date(srv.scheduled_time);
+      const dateStr = d.toLocaleDateString("de-DE", { day: '2-digit', month: '2-digit' });
+      const timeStr = d.toLocaleTimeString("de-DE", { hour: '2-digit', minute: '2-digit' });
+      const name = this.getTemplateName(srv.template_id);
+      return `${dateStr} ${timeStr} - ${name}`;
+    },
+    getTemplateName(templateId) {
+      const t = this.templatesList.find(x => x.id === templateId);
+      return t ? t.name : 'Gottesdienst';
     },
     async pollActiveServiceState() {
       if (!this.serviceId) return;
@@ -711,18 +947,47 @@ export default {
         const type = parts[parts.length - 1];
         const toneStr = parts[1].replace("tone_", "");
         if (type === "troparion") return `Troparion (Ton ${toneStr})`;
+        if (type === "kontakion") return `Kontakion (Ton ${toneStr})`;
         if (type === "prokeimenon") return `Prokeimenon (Ton ${toneStr})`;
         return `Tagesgesang (Ton ${toneStr})`;
       }
       if (key.startsWith("scripture.epistle.")) {
-        const ref = key.replace("scripture.epistle.", "");
+        let ref = key.replace("scripture.epistle.", "");
+        ref = this.translateBibleRef(ref);
         return `Epistellesung (${ref})`;
       }
       if (key.startsWith("scripture.gospel.")) {
-        const ref = key.replace("scripture.gospel.", "");
+        let ref = key.replace("scripture.gospel.", "");
+        ref = this.translateBibleRef(ref);
         return `Evangelienlesung (${ref})`;
       }
       return key.split('.').pop().replace(/_/g, ' ');
+    },
+    translateBibleRef(ref) {
+      if (!ref) return '';
+      const books = {
+        "Romans": "Römer",
+        "Matthew": "Matthäus",
+        "Mark": "Markus",
+        "Luke": "Lukas",
+        "John": "Johannes",
+        "Acts": "Apostelgeschichte",
+        "Corinthians": "Korinther",
+        "Galatians": "Galater",
+        "Ephesians": "Epheser",
+        "Philippians": "Philipper",
+        "Colossians": "Kolosser",
+        "Thessalonians": "Thessalonicher",
+        "Timothy": "Timotheus",
+        "Hebrews": "Hebräer",
+        "Peter": "Petrus",
+        "Revelation": "Offenbarung"
+      };
+      let result = ref;
+      Object.keys(books).forEach(en => {
+        result = result.replace(en, books[en]);
+      });
+      return result;
     },
     getLiturgicalRoles(key) {
       const roles = [];

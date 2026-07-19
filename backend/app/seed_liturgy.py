@@ -277,8 +277,12 @@ def seed_database():
             session.add(ti_cu)
             session.add(ti_de)
             session.commit()
-        
         print("Liturgical text library fully seeded.")
+
+        # Pre-resolve default scripture passages
+        from backend.app.services.scripture_resolver import resolve_scripture_passage
+        resolve_scripture_passage("scripture.epistle.Romans 12:1-10", session)
+        resolve_scripture_passage("scripture.gospel.Matthew 14:1-15", session)
 
         # 4. Update the LiturgicalTemplate structure tree with the 32 sequential parts
         template = session.exec(
