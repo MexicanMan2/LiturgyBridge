@@ -743,22 +743,33 @@ export default {
         this.serviceDate = `${dateObj.toLocaleDateString("de-DE", {weekday:"long", day:"numeric", month:"long", year:"numeric"})} um ${dateObj.toLocaleTimeString("de-DE", {hour:"2-digit", minute:"2-digit"})}`;
         
         this.activeSectionKey = data.service.current_section_key;
-        this.liturgySections = (data.structure && data.structure.sections) ? data.structure.sections : data.template.structure.sections;
+        
+        let sections = [];
+        if (data.structure && Array.isArray(data.structure.sections)) {
+          sections = data.structure.sections;
+        } else if (data.template && data.template.structure && Array.isArray(data.template.structure.sections)) {
+          sections = data.template.structure.sections;
+        }
+        this.liturgySections = sections;
         this.sourcesBibliography = data.sources_bibliography || {};
 
         // Build flat array of items to render
         const items = [];
-        this.liturgySections.forEach(sec => {
-          sec.text_keys.forEach(key => {
-            const textItem = data.texts[key];
-            if (textItem) {
-              items.push({
-                key,
-                ...textItem
+        if (Array.isArray(this.liturgySections)) {
+          this.liturgySections.forEach(sec => {
+            if (sec && Array.isArray(sec.text_keys)) {
+              sec.text_keys.forEach(key => {
+                const textItem = data.texts[key];
+                if (textItem) {
+                  items.push({
+                    key,
+                    ...textItem
+                  });
+                }
               });
             }
           });
-        });
+        }
         this.listItems = items;
         
         // Auto-expand active step
@@ -769,7 +780,7 @@ export default {
 
         // Preload sermon if editing
         const sermonKey = `sermon.service_${this.serviceId}`;
-        if (data.texts[sermonKey]) {
+        if (data.texts && data.texts[sermonKey]) {
           this.sermonText = data.texts[sermonKey].translations.de || '';
         } else {
           this.sermonText = '';
@@ -780,12 +791,10 @@ export default {
         this.loading = false;
       }
     },
-    openScheduleModal() {
-      if (this.templatesList.length === 0) {
-        this.loadTemplates();
-      }
+    async openScheduleModal() {
+      await this.loadTemplates();
       this.selectThisSunday();
-      if (this.templatesList.length > 0) {
+      if (this.templatesList.length > 0 && !this.newServiceTemplateId) {
         this.newServiceTemplateId = this.templatesList[0].id;
       }
       this.showScheduleModal = true;
@@ -909,6 +918,13 @@ export default {
     },
     async scheduleService() {
       try {
+        if (!this.newServiceTemplateId && this.templatesList.length > 0) {
+          this.newServiceTemplateId = this.templatesList[0].id;
+        }
+        if (!this.newServiceTemplateId) {
+          throw new Error("Bitte wähle eine Liturgie-Vorlage aus.");
+        }
+
         const payload = {
           template_id: this.newServiceTemplateId,
           community_id: this.communityId || "929e9fd8-cdaf-4152-8e62-e89eb991fd6c",

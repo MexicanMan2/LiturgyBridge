@@ -82,17 +82,16 @@ def get_liturgy_preview_client():
                 session.commit()
                 session.refresh(community)
             
+            # Check templates count, auto-seed all 8 official templates if missing
+            all_templates = session.exec(select(LiturgicalTemplate)).all()
+            if len(all_templates) < 8:
+                from backend.app.seed_liturgy import seed_database
+                seed_database()
+            
             # Fetch template, and auto-seed if missing
             template = session.exec(
                 select(LiturgicalTemplate).where(LiturgicalTemplate.name == "Göttliche Liturgie des Hl. Johannes Chrysostomus")
             ).first()
-            
-            if not template:
-                from backend.app.seed_liturgy import seed_database
-                seed_database()
-                template = session.exec(
-                    select(LiturgicalTemplate).where(LiturgicalTemplate.name == "Göttliche Liturgie des Hl. Johannes Chrysostomus")
-                ).first()
             
             if template:
                 target_date = datetime(2026, 7, 19, 10, 0, 0, tzinfo=timezone.utc)
