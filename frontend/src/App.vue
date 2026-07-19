@@ -921,6 +921,16 @@ export default {
         "liturgy.trisagion.main": "Trisagion (Dreimalheilig-Hymnus)",
         "liturgy.alleluia_ref": "Halleluja-Vers",
         "liturgy.sermon_placeholder": "Predigt",
+        "dynamic.epistle_reading": "Epistellesung",
+        "dynamic.gospel_reading": "Evangelienlesung",
+        "dynamic.tonal_troparion": "Troparion des Tages",
+        "dynamic.tonal_prokeimenon": "Prokeimenon der Lesung",
+        "epistle_reading": "Epistellesung",
+        "gospel_reading": "Evangelienlesung",
+        "readings_epistle": "Epistellesung",
+        "readings_gospel": "Evangelienlesung",
+        "part_1.readings_epistle": "Epistellesung",
+        "part_1.readings_gospel": "Evangelienlesung",
         "liturgy.cherubic_hymn.main": "Cherubim-Hymnus",
         "liturgy.litany_supplication": "Ektenie der Rüstung",
         "liturgy.creed.main": "Glaubensbekenntnis",
@@ -961,6 +971,8 @@ export default {
         ref = this.translateBibleRef(ref);
         return `Evangelienlesung (${ref})`;
       }
+      if (key.includes("epistle")) return "Epistellesung";
+      if (key.includes("gospel")) return "Evangelienlesung";
       return key.split('.').pop().replace(/_/g, ' ');
     },
     translateBibleRef(ref) {
