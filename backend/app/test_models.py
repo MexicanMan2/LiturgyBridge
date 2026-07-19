@@ -69,14 +69,17 @@ def test_liturgy_bridge_models():
                 }
             ]
         }
-        template = LiturgicalTemplate(
-            name="Göttliche Liturgie des Hl. Johannes Chrysostomus",
-            tradition="Byzantine",
-            structure=template_struct,
-        )
-        session.add(template)
-        session.commit()
-        session.refresh(template)
+        template = session.get(LiturgicalTemplate, uuid.UUID("a9fb5917-a068-4592-80de-df619280d922"))
+        if not template:
+            template = LiturgicalTemplate(
+                id=uuid.UUID("a9fb5917-a068-4592-80de-df619280d922"),
+                name="Göttliche Liturgie des Hl. Johannes Chrysostomus",
+                tradition="Byzantine",
+                structure=template_struct,
+            )
+            session.add(template)
+            session.commit()
+            session.refresh(template)
 
         # 5. Create Text Items & Translations
         text_item_1 = TextItem(

@@ -771,7 +771,12 @@ export default {
         }
 
         if (!this.serviceId) {
-          throw new Error("Kein aktiver Gottesdienst gefunden. Bitte planen Sie einen Gottesdienst.");
+          this.serviceName = "Kein Gottesdienst geplant";
+          this.serviceSubHeader = "Bitte klicke oben auf 📅 Planen, um einen neuen Gottesdienst zu erstellen.";
+          this.listItems = [];
+          this.error = null;
+          this.loading = false;
+          return;
         }
 
         // 4. Load details

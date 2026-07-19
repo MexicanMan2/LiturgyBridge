@@ -224,9 +224,18 @@ def create_service(service_in: ServiceCreate, session: Session = Depends(get_ses
     if not template:
         raise HTTPException(status_code=404, detail="Template not found")
 
+    comm = session.get(Community, service_in.community_id) if service_in.community_id else None
+    if not comm:
+        comm = session.exec(select(Community)).first()
+        if not comm:
+            comm = Community(name="Kathedrale zum Hl. Nikolaus", location="Berlin, Deutschland")
+            session.add(comm)
+            session.commit()
+            session.refresh(comm)
+
     db_service = LiturgicalService(
         template_id=service_in.template_id,
-        community_id=service_in.community_id,
+        community_id=comm.id,
         scheduled_time=service_in.scheduled_time,
         active_languages=service_in.active_languages,
         status="draft"
