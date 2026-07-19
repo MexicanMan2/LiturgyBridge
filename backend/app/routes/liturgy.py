@@ -449,11 +449,17 @@ def get_service_details(
         structure_to_use = service.custom_structure if service.custom_structure else (template.structure if template else {})
         raw_keys = extract_text_keys(structure_to_use)
         
+        # Check daily saint troparia/kontakia
+        saint_troparion = "saint.sisoes.troparion" if service.scheduled_time.month == 7 and service.scheduled_time.day == 19 else "saint.daily.troparion"
+        saint_kontakion = "saint.sisoes.kontakion" if service.scheduled_time.month == 7 and service.scheduled_time.day == 19 else "saint.daily.kontakion"
+
         # Define mappings from placeholder keys to actual resolved database keys
         placeholder_mapping = {
             "dynamic.tonal_troparion": f"oktoechos.tone_{tone}.troparion",
             "dynamic.tonal_kontakion": f"oktoechos.tone_{tone}.kontakion",
             "dynamic.tonal_prokeimenon": f"oktoechos.tone_{tone}.prokeimenon",
+            "dynamic.saint_troparion": saint_troparion,
+            "dynamic.saint_kontakion": saint_kontakion,
             "dynamic.epistle_reading": f"scripture.epistle.{cal_info['epistle_ref']}",
             "dynamic.gospel_reading": f"scripture.gospel.{cal_info['gospel_ref']}",
             "liturgy.sermon_placeholder": resolved_sermon_key
@@ -570,11 +576,15 @@ def get_service_details(
                     "explanation": explanation
                 }
 
+    from backend.app.services.liturgical_calendar import get_liturgical_day_info
+    cal_info = get_liturgical_day_info(service.scheduled_time)
+
     return {
         "service": service,
         "template": template,
         "structure": structure_to_use,
         "texts": resolved_texts,
+        "calendar_info": cal_info,
         "sources_bibliography": BIBLIOGRAPHY
     }
 
@@ -596,6 +606,31 @@ def update_service(service_id: uuid.UUID, service_up: ServiceUpdate, session: Se
     session.commit()
     session.refresh(service)
     return service
+
+
+@router.delete("/services/{service_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_service(service_id: uuid.UUID, session: Session = Depends(get_session)):
+    """
+    Deletes a scheduled service and cleans up associated bookmarks.
+    """
+    service = session.get(LiturgicalService, service_id)
+    if not service:
+        raise HTTPException(status_code=404, detail="Liturgical service not found")
+        
+    # Clean up associated bookmarks
+    bookmarks = session.exec(select(Bookmark).where(Bookmark.service_id == service_id)).all()
+    for bm in bookmarks:
+        session.delete(bm)
+        
+    # Disassociate events if referenced
+    events = session.exec(select(Event).where(Event.associated_service_id == service_id)).all()
+    for ev in events:
+        ev.associated_service_id = None
+        session.add(ev)
+        
+    session.delete(service)
+    session.commit()
+    return None
 
 
 # --- Translation Library Endpoints ---

@@ -70,7 +70,7 @@ def test_liturgy_bridge_models():
             ]
         }
         template = LiturgicalTemplate(
-            name="Sunday Divine Liturgy",
+            name="Göttliche Liturgie des Hl. Johannes Chrysostomus",
             tradition="Byzantine",
             structure=template_struct,
         )

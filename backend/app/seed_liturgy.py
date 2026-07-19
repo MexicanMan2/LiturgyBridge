@@ -198,6 +198,26 @@ liturgy_data = [
         "oktoechos.tone_6.prokeimenon", "hymn",
         "Спаси, Господи, люди Твоя, и благослови достояние Твое.",
         "Rette, o Herr, Dein Volk und segne Dein Erbe."
+    ),
+    (
+        "saint.sisoes.troparion", "hymn",
+        "Пустынный житель и в телеси Ангел...",
+        "Als Bürger der Wüste, als Engel im Leibe und Wundertäter hast du dich, unser gotttragender Vater Sisoës, erwiesen; durch Fasten, Nachtwachen und Beten hast du himmlische Gnadengaben empfangen und heilst so die Kranken und die Seelen der zu dir Eilenden. Ehre dem, der dir Kraft gab; Ehre dem, der dich krönte; Ehre dem, der durch dich allen Heilungen wirkt."
+    ),
+    (
+        "saint.sisoes.kontakion", "hymn",
+        "Преподобне Сисое...",
+        "Große Askese hast du geübt und wurdest so als Engel auf Erden geschaut, Gottseliger, jederzeit erleuchtend die Verstandeskräfte der Gläubigen durch göttliche Zeichen. Deshalb ehren wir dich im Glauben, Sisoës."
+    ),
+    (
+        "liturgy.theotokion.beistand", "hymn",
+        "Предстательство христиан непостыдное...",
+        "Nie zuschanden gewordener Beistand des Christengeschlechts, du ganz und gar unwandelbare Mittlerin beim Schöpfer, übersieh nicht der Sünder dringliches Gebet, sondern komme, als Gute, zuvor, uns immer hilfreich beizustehen, die wir gläubig zu dir rufen: Eile, für uns zu flehen, komm schnell, für uns einzustehen, die du stets Beistand derer bist, die dich, Gottesgebärerin, ehren."
+    ),
+    (
+        "liturgy.hours.3rd_and_6th", "hours",
+        "Чтение 3-го и 6-го часов перед Божественной Литургией...",
+        "Vor Beginn der Göttlichen Liturgie wird von einem Lektor die Dritte und die Sechste Stunde gelesen. In der Orthodoxen Kirche ist es üblich, während des gesamten Gottesdienstes zu stehen. Während der Stunden bereitet der Priester in der Proskomidie die Liturgie vor."
     )
 ]
 
@@ -287,6 +307,7 @@ def seed_database():
         complete_structure = {
             "name": "Göttliche Liturgie des Hl. Johannes Chrysostomus",
             "sections": [
+                {"section_key": "part_0.hours", "text_keys": ["liturgy.hours.3rd_and_6th"]},
                 {"section_key": "part_1.blessing", "text_keys": ["liturgy.opening_blessing"]},
                 {"section_key": "part_1.great_litany", "text_keys": ["liturgy.great_litany.lord_have_mercy"]},
                 {"section_key": "part_1.first_antiphon", "text_keys": ["liturgy.first_antiphon.refrain"]},
@@ -295,7 +316,8 @@ def seed_database():
                 {"section_key": "part_1.small_litany_2", "text_keys": ["liturgy.small_litany_2"]},
                 {"section_key": "part_1.third_antiphon", "text_keys": ["liturgy.third_antiphon.beatitudes"]},
                 {"section_key": "part_1.small_entrance", "text_keys": ["liturgy.small_entrance.verse"]},
-                {"section_key": "part_1.troparion", "text_keys": ["dynamic.tonal_troparion"]},
+                {"section_key": "part_1.troparion", "text_keys": ["dynamic.tonal_troparion", "dynamic.saint_troparion"]},
+                {"section_key": "part_1.kontakion", "text_keys": ["dynamic.tonal_kontakion", "dynamic.saint_kontakion", "liturgy.theotokion.beistand"]},
                 {"section_key": "part_1.trisagion", "text_keys": ["liturgy.trisagion.main"]},
                 {"section_key": "part_1.prokeimenon", "text_keys": ["dynamic.tonal_prokeimenon"]},
                 {"section_key": "part_1.readings_epistle", "text_keys": ["dynamic.epistle_reading"]},

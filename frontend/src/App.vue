@@ -9,9 +9,12 @@
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
         <!-- Logo and Title -->
         <div class="text-left flex flex-col gap-1.5">
-          <h1 class="font-serif text-3xl sm:text-4xl font-semibold bg-gradient-to-r from-white to-amber-500 bg-clip-text text-transparent">
-            {{ serviceName || 'Gottesdienst-Begleiter' }}
+          <h1 class="font-serif text-2xl sm:text-3xl font-semibold bg-gradient-to-r from-white to-amber-500 bg-clip-text text-transparent">
+            {{ serviceName || 'Gottesdienst am Sonntag' }}
           </h1>
+          <p v-if="serviceSubHeader" class="text-xs sm:text-sm text-amber-200/90 font-serif italic">
+            {{ serviceSubHeader }}
+          </p>
           
           <div class="flex items-center gap-3 flex-wrap">
             <p class="text-xs sm:text-sm text-gray-400 uppercase tracking-wider font-semibold">
@@ -117,7 +120,7 @@
       <div v-else class="flex flex-col gap-4">
         <!-- Liturgical Section Cards -->
         <div 
-          v-for="(item, idx) in listItems" 
+          v-for="(item, idx) in filteredListItems" 
           :key="item.key"
           :id="'card-' + item.key"
           class="card group transition-transform"
@@ -412,7 +415,7 @@
                 type="button"
                 :disabled="!day.isCurrentMonth"
                 @click="selectCalendarDate(day.dateStr)"
-                class="h-8 w-full flex items-center justify-center rounded-xl text-xs font-medium transition-all"
+                class="relative h-9 w-full flex items-center justify-center rounded-xl text-xs font-medium transition-all"
                 :class="[
                   !day.isCurrentMonth ? 'opacity-20 cursor-not-allowed' : 'hover:bg-amber-500/20 cursor-pointer',
                   selectedCalendarDate === day.dateStr ? 'bg-amber-500 text-black font-bold shadow-lg shadow-amber-500/20' : '',
@@ -421,47 +424,74 @@
                   selectedCalendarDate !== day.dateStr && !day.isSunday && !day.isToday && day.isCurrentMonth ? 'text-gray-200 bg-white/5' : ''
                 ]"
               >
-                {{ day.dayNumber }}
+                <span>{{ day.dayNumber }}</span>
+                <!-- Glowing indicator badge if a service is already scheduled on this day -->
+                <span v-if="day.hasService" class="absolute top-1 right-1 w-2 h-2 bg-amber-400 rounded-full shadow-sm shadow-amber-500/80 animate-pulse" title="Gottesdienst bereits geplant"></span>
               </button>
             </div>
 
-            <!-- Time Picker -->
-            <div class="flex items-center justify-between border-t border-white/10 pt-3 mt-1">
-              <span class="text-xs text-gray-400 font-medium">Uhrzeit wählen:</span>
+            <!-- Existing Services Indicator for Selected Day -->
+            <div v-if="selectedDayServices.length > 0" class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-xs text-amber-200 text-left mt-1">
+              <div class="font-bold text-amber-400 mb-1.5 flex items-center justify-between border-b border-amber-500/20 pb-1">
+                <span class="flex items-center gap-1.5">🕯️ Geplante Gottesdienste an diesem Tag:</span>
+                <span class="text-[10px] opacity-70">({{ selectedDayServices.length }})</span>
+              </div>
+              <ul class="flex flex-col gap-1.5 text-[11px] text-gray-300">
+                <li v-for="srv in selectedDayServices" :key="srv.id" class="flex items-center justify-between bg-black/30 p-2 rounded-xl border border-white/5">
+                  <div class="flex items-center gap-2 truncate">
+                    <span class="font-bold text-amber-300 shrink-0">{{ formatServiceTimeOnly(srv.scheduled_time) }}</span>
+                    <span class="truncate text-gray-200 font-medium">{{ getTemplateName(srv.template_id) }}</span>
+                  </div>
+                  <button 
+                    v-if="isPriest || isAdmin"
+                    type="button" 
+                    @click="deleteService(srv.id, getTemplateName(srv.template_id))" 
+                    class="text-gray-400 hover:text-red-400 p-1 hover:bg-red-500/20 rounded-lg transition-colors text-xs font-bold shrink-0 ml-2"
+                    title="Gottesdienst löschen"
+                  >
+                    🗑️
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Custom Time Picker -->
+            <div class="flex flex-col gap-1.5 border-t border-white/10 pt-3 mt-1">
+              <label class="text-xs text-gray-400 font-medium">Uhrzeit festlegen:</label>
               <div class="flex items-center gap-2">
-                <select 
+                <input 
+                  type="time" 
                   v-model="selectedTime"
-                  @change="updateScheduledTimeFromCalendar"
-                  class="bg-slate-900 border border-white/10 text-amber-400 rounded-lg text-xs font-semibold px-2 py-1 focus:outline-none"
+                  @input="updateScheduledTimeFromCalendar"
+                  class="bg-slate-900 border border-white/10 text-amber-400 rounded-xl text-sm font-bold px-3 py-1.5 focus:outline-none focus:border-amber-500/50 cursor-pointer"
                 >
-                  <option value="09:00">09:00 Uhr (Mette)</option>
-                  <option value="09:30">09:30 Uhr (Orthros)</option>
-                  <option value="10:00">10:00 Uhr (Liturgie)</option>
-                  <option value="17:00">17:00 Uhr (Vesper)</option>
-                  <option value="18:00">18:00 Uhr (Abendgottesdienst)</option>
-                </select>
+                <div class="flex gap-1 text-[10px]">
+                  <button type="button" @click="setTimePreset('09:00')" class="bg-white/5 hover:bg-amber-500/20 text-amber-300 border border-white/10 px-2 py-1 rounded-lg transition-colors">09:00</button>
+                  <button type="button" @click="setTimePreset('10:00')" class="bg-white/5 hover:bg-amber-500/20 text-amber-300 border border-white/10 px-2 py-1 rounded-lg transition-colors">10:00</button>
+                  <button type="button" @click="setTimePreset('17:00')" class="bg-white/5 hover:bg-amber-500/20 text-amber-300 border border-white/10 px-2 py-1 rounded-lg transition-colors">17:00</button>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Languages -->
+          <!-- Target Translation Languages -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-xs text-gray-400">Aktive Sprachen</label>
+            <label class="text-xs text-gray-400">Übersetzungssprachen für Besucher / Gemeinde</label>
+            <div class="text-[11px] text-gray-400 italic mb-0.5">
+              (Hinweis: Der kirchenslawische Originaltext ist als Kirchensprache im Haupttext immer fest enthalten)
+            </div>
             <div class="grid grid-cols-2 gap-2 bg-slate-950/50 border border-white/5 rounded-xl p-3">
               <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer select-none">
-                <input type="checkbox" value="de" v-model="newServiceLanguages" class="accent-amber-500"> Deutsch
+                <input type="checkbox" value="de" v-model="newServiceLanguages" class="accent-amber-500"> Deutsch (de)
               </label>
               <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer select-none">
-                <input type="checkbox" value="cu" v-model="newServiceLanguages" class="accent-amber-500"> Kirchenslawisch
+                <input type="checkbox" value="en" v-model="newServiceLanguages" class="accent-amber-500"> English (en)
               </label>
               <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer select-none">
-                <input type="checkbox" value="en" v-model="newServiceLanguages" class="accent-amber-500"> English
+                <input type="checkbox" value="ru" v-model="newServiceLanguages" class="accent-amber-500"> Русский (ru)
               </label>
               <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer select-none">
-                <input type="checkbox" value="ru" v-model="newServiceLanguages" class="accent-amber-500"> Русский
-              </label>
-              <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer select-none">
-                <input type="checkbox" value="uk" v-model="newServiceLanguages" class="accent-amber-500"> Українська
+                <input type="checkbox" value="uk" v-model="newServiceLanguages" class="accent-amber-500"> Українська (uk)
               </label>
             </div>
           </div>
@@ -494,6 +524,7 @@ export default {
     return {
       serviceId: null,
       serviceName: '',
+      serviceSubHeader: '',
       serviceDate: '',
       loading: true,
       error: null,
@@ -555,6 +586,12 @@ export default {
     isAdmin() {
       return this.user && this.user.roles && this.user.roles.includes('admin');
     },
+    filteredListItems() {
+      if (this.isPriest || this.isAdmin) {
+        return this.listItems;
+      }
+      return this.listItems.filter(item => !item.key.includes('.silent'));
+    },
     currentSectionIndex() {
       if (!this.activeSectionKey) return -1;
       return this.liturgySections.findIndex(sec => sec.text_keys.includes(this.activeSectionKey));
@@ -582,6 +619,7 @@ export default {
           isCurrentMonth: false,
           isSunday: false,
           isToday: false,
+          hasService: false,
           dateStr: ''
         });
       }
@@ -597,15 +635,32 @@ export default {
         const dayStr = d.toString().padStart(2, '0');
         const fullStr = `${this.calendarYear}-${monthStr}-${dayStr}`;
         
+        const hasService = this.servicesList.some(s => {
+          const sd = new Date(s.scheduled_time);
+          const smStr = (sd.getMonth() + 1).toString().padStart(2, '0');
+          const sdStr = sd.getDate().toString().padStart(2, '0');
+          return `${sd.getFullYear()}-${smStr}-${sdStr}` === fullStr;
+        });
+        
         days.push({
           dayNumber: d,
           isCurrentMonth: true,
           isSunday,
           isToday: fullStr === todayStr,
+          hasService,
           dateStr: fullStr
         });
       }
       return days;
+    },
+    selectedDayServices() {
+      if (!this.selectedCalendarDate) return [];
+      return this.servicesList.filter(s => {
+        const d = new Date(s.scheduled_time);
+        const mStr = (d.getMonth() + 1).toString().padStart(2, '0');
+        const dStr = d.getDate().toString().padStart(2, '0');
+        return `${d.getFullYear()}-${mStr}-${dStr}` === this.selectedCalendarDate;
+      });
     }
   },
   async mounted() {
@@ -736,10 +791,18 @@ export default {
         if (!response.ok) throw new Error("Laden der Liturgie fehlgeschlagen.");
         const data = await response.json();
 
-        this.serviceName = data.template.name;
-        this.communityId = data.service.community_id;
-        
         const dateObj = new Date(data.service.scheduled_time);
+        
+        if (data.calendar_info) {
+          const dateFormatted = dateObj.toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" });
+          this.serviceName = `Gottesdienst am Sonntag, dem ${dateFormatted}`;
+          this.serviceSubHeader = `(${data.calendar_info.old_style_date} nach dem alten Stil) — ${data.calendar_info.german_day_name}. Ton ${data.calendar_info.tone}. ${data.calendar_info.saints_of_day}.`;
+        } else {
+          this.serviceName = data.template.name;
+          this.serviceSubHeader = '';
+        }
+        
+        this.communityId = data.service.community_id;
         this.serviceDate = `${dateObj.toLocaleDateString("de-DE", {weekday:"long", day:"numeric", month:"long", year:"numeric"})} um ${dateObj.toLocaleTimeString("de-DE", {hour:"2-digit", minute:"2-digit"})}`;
         
         this.activeSectionKey = data.service.current_section_key;
@@ -855,6 +918,15 @@ export default {
     updateScheduledTimeFromCalendar() {
       this.newServiceDate = `${this.selectedCalendarDate}T${this.selectedTime}`;
     },
+    setTimePreset(timeStr) {
+      this.selectedTime = timeStr;
+      this.updateScheduledTimeFromCalendar();
+    },
+    formatServiceTimeOnly(isoStr) {
+      if (!isoStr) return '';
+      const d = new Date(isoStr);
+      return d.toLocaleTimeString("de-DE", { hour: '2-digit', minute: '2-digit' }) + " Uhr";
+    },
     onDragStart(event, index) {
       this.draggedIndex = index;
       if (event.dataTransfer) {
@@ -962,6 +1034,37 @@ export default {
 
       } catch (err) {
         alert("Fehler beim Planen des Gottesdienstes: " + err.message);
+      }
+    },
+    async deleteService(serviceId, serviceTitle) {
+      if (!confirm(`Möchtest du den Gottesdienst "${serviceTitle}" wirklich löschen?`)) {
+        return;
+      }
+      try {
+        const res = await fetch(`/api/v1/liturgy/services/${serviceId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || "Löschen fehlgeschlagen");
+        }
+
+        // Refresh services list
+        const servicesRes = await fetch("/api/v1/liturgy/services");
+        if (servicesRes.ok) {
+          this.servicesList = await servicesRes.json();
+        }
+
+        // If the deleted service was the currently active one, reload liturgy
+        if (this.serviceId === serviceId) {
+          this.serviceId = null;
+          await this.loadLiturgy();
+        }
+      } catch (err) {
+        alert("Fehler beim Löschen des Gottesdienstes: " + err.message);
       }
     },
     formatServiceOption(srv) {

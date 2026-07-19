@@ -112,13 +112,22 @@ def get_liturgical_day_info(dt: datetime) -> Dict[str, Any]:
             epistle = "Hebrews 11:33-12:2"
             gospel = "Matthew 10:32-38, 19:27-30"
         elif sundays_after_pentecost == 5:
-            # Match our verification test day: 5th Sunday after Pentecost
+            # 5th Sunday after Pentecost
             day_name = "5th Sunday after Pentecost"
             epistle = "Romans 10:1-10"
             gospel = "Matthew 8:28-9:1"
+        elif sundays_after_pentecost == 6:
+            # 6th Sunday after Pentecost
+            day_name = "6th Sunday after Pentecost"
+            epistle = "Romans 12:6-14"
+            gospel = "Matthew 9:1-8"
+        elif sundays_after_pentecost == 7:
+            # 7th Sunday after Pentecost (19.07.2026)
+            day_name = "7th Sunday after Pentecost"
+            epistle = "Romans 15:1-7"
+            gospel = "Matthew 9:27-35"
         else:
-            day_name = f"{sundays_after_pentecost}nd Sunday after Pentecost" if sundays_after_pentecost == 2 else f"{sundays_after_pentecost}th Sunday after Pentecost"
-            # Generic readings placeholders
+            day_name = f"{sundays_after_pentecost}th Sunday after Pentecost"
             epistle = f"Romans {sundays_after_pentecost + 5}:1-10"
             gospel = f"Matthew {sundays_after_pentecost + 5}:1-15"
 
@@ -128,12 +137,29 @@ def get_liturgical_day_info(dt: datetime) -> Dict[str, Any]:
         epistle = "Hebrews 13:17-21"
         gospel = "Luke 6:17-23"
 
+    # Old Style (Julian Calendar) calculation (-13 days for 1900-2099)
+    julian_d = d - timedelta(days=13)
+    german_months = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"]
+    old_style_date_str = f"{julian_d.day:02d}. {german_months[julian_d.month - 1]} {julian_d.year}"
+    
+    # Commemorations of the day
+    saints_of_day = "Tagesheilige"
+    if d.month == 7 and d.day == 19:
+        saints_of_day = "Frommer Vater Sisoes der Große"
+
+    german_day_name = day_name
+    if "7th Sunday after Pentecost" in day_name:
+        german_day_name = "7. Sonntag nach Pfingsten"
+
     return {
         "date": d.isoformat(),
+        "old_style_date": old_style_date_str,
         "pascha_date": pascha_ref.isoformat(),
         "weeks_since_pascha": weeks_since,
         "tone": tone,
         "liturgical_day_name": day_name,
+        "german_day_name": german_day_name,
+        "saints_of_day": saints_of_day,
         "epistle_ref": epistle,
         "gospel_ref": gospel,
     }
