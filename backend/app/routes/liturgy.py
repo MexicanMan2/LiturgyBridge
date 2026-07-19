@@ -19,6 +19,7 @@ from backend.app.models import (
     Community,
     LiturgicalTemplate,
     LiturgicalService,
+    Event,
     TextItem,
     TranslationItem,
     Bookmark,
@@ -431,22 +432,20 @@ def get_service_details(
         
     template = session.get(LiturgicalTemplate, service.template_id)
     
-    # Extract keys and fetch texts with translation overlay if requested
+    structure_to_use = service.custom_structure if service.custom_structure else (template.structure if template else {})
     resolved_texts = {}
+    
     if languages and template:
         requested_langs = [l.strip() for l in languages.split(",") if l.strip()]
         
-        # Calculate calendar parameters based on service schedule date
         from backend.app.services.liturgical_calendar import get_liturgical_day_info
         cal_info = get_liturgical_day_info(service.scheduled_time)
         tone = cal_info["tone"]
         
-        # Check if service-specific sermon exists in the DB
         sermon_key = f"sermon.service_{service.id}"
         sermon_exists = session.get(TextItem, sermon_key) is not None
         resolved_sermon_key = sermon_key if sermon_exists else "liturgy.sermon_placeholder"
         
-        structure_to_use = service.custom_structure if service.custom_structure else (template.structure if template else {})
         raw_keys = extract_text_keys(structure_to_use)
         
         # Check daily saint troparia/kontakia

@@ -593,8 +593,8 @@ export default {
       return this.listItems.filter(item => !item.key.includes('.silent'));
     },
     currentSectionIndex() {
-      if (!this.activeSectionKey) return -1;
-      return this.liturgySections.findIndex(sec => sec.text_keys.includes(this.activeSectionKey));
+      if (!this.activeSectionKey || !Array.isArray(this.liturgySections)) return -1;
+      return this.liturgySections.findIndex(sec => sec && Array.isArray(sec.text_keys) && sec.text_keys.includes(this.activeSectionKey));
     },
     sortedServices() {
       return [...this.servicesList].sort((a, b) => new Date(b.scheduled_time) - new Date(a.scheduled_time));
@@ -997,10 +997,14 @@ export default {
           throw new Error("Bitte wähle eine Liturgie-Vorlage aus.");
         }
 
+        const dateStr = this.selectedCalendarDate || new Date().toISOString().split('T')[0];
+        const timeStr = this.selectedTime || '10:00';
+        const scheduledDateObj = new Date(`${dateStr}T${timeStr}:00`);
+
         const payload = {
           template_id: this.newServiceTemplateId,
           community_id: this.communityId || "929e9fd8-cdaf-4152-8e62-e89eb991fd6c",
-          scheduled_time: new Date(this.newServiceDate).toISOString(),
+          scheduled_time: scheduledDateObj.toISOString(),
           active_languages: this.newServiceLanguages
         };
 
