@@ -120,15 +120,30 @@
           v-for="(item, idx) in listItems" 
           :key="item.key"
           :id="'card-' + item.key"
-          class="card group"
+          class="card group transition-transform"
+          :draggable="isPriest || isAdmin"
+          @dragstart="onDragStart($event, idx)"
+          @dragover.prevent
+          @dragenter.prevent
+          @drop="onDrop($event, idx)"
           :class="[
             activeSectionKey === item.key ? 'active-step border-amber-500/50 shadow-amber-500/5' : '',
-            expandedCards.has(item.key) ? 'expanded' : ''
+            expandedCards.has(item.key) ? 'expanded' : '',
+            draggedIndex === idx ? 'opacity-40 border-dashed border-amber-500' : ''
           ]"
         >
           <!-- Card Header -->
           <div @click="toggleCard(item.key)" class="flex items-center justify-between p-5 cursor-pointer user-select-none">
-            <div class="flex items-center gap-4 flex-grow">
+            <div class="flex items-center gap-3 flex-grow">
+              <!-- Drag Handle & Mobile Reordering for Priest/Admin -->
+              <div v-if="isPriest || isAdmin" class="flex items-center gap-1 text-gray-500 hover:text-amber-400 cursor-grab active:cursor-grabbing bg-white/5 border border-white/10 rounded-lg p-1.5" @click.stop title="Reihenfolge ändern (Drag & Drop)">
+                <span class="text-sm font-bold leading-none select-none px-0.5 text-amber-500">⋮⋮</span>
+                <div class="flex flex-col text-[10px] leading-none gap-0.5">
+                  <button type="button" @click.stop="moveItemUp(idx)" :disabled="idx === 0" class="hover:text-amber-400 disabled:opacity-20 px-0.5 font-bold">▲</button>
+                  <button type="button" @click.stop="moveItemDown(idx)" :disabled="idx === listItems.length - 1" class="hover:text-amber-400 disabled:opacity-20 px-0.5 font-bold">▼</button>
+                </div>
+              </div>
+
               <!-- Index Badge -->
               <div class="index-badge">
                 {{ idx + 1 }}
@@ -363,15 +378,70 @@
             </select>
           </div>
 
-          <!-- Date and Time -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-xs text-gray-400">Datum & Uhrzeit</label>
-            <input 
-              type="datetime-local" 
-              v-model="newServiceDate" 
-              required
-              class="w-full bg-slate-950 border border-white/10 rounded-xl p-2.5 text-sm text-white focus:outline-none focus:border-amber-500/50 cursor-pointer"
-            >
+          <!-- Smartphone Calendar Widget -->
+          <div class="flex flex-col gap-2 bg-slate-950/80 border border-white/10 rounded-2xl p-4">
+            <div class="flex items-center justify-between text-sm font-semibold text-white pb-2 border-b border-white/10">
+              <button type="button" @click="prevMonth" class="px-3 py-1 hover:bg-white/10 rounded-lg text-amber-500 font-bold transition-colors">◀</button>
+              <span class="font-serif tracking-wide text-amber-400">{{ calendarMonthName }} {{ calendarYear }}</span>
+              <button type="button" @click="nextMonth" class="px-3 py-1 hover:bg-white/10 rounded-lg text-amber-500 font-bold transition-colors">▶</button>
+            </div>
+
+            <!-- Quick Presets -->
+            <div class="flex items-center justify-between gap-1 text-[11px] pt-1">
+              <button type="button" @click="selectThisSunday" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-1 rounded-lg transition-colors font-medium">
+                Diesen So
+              </button>
+              <button type="button" @click="selectNextSunday" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-1 rounded-lg transition-colors font-medium">
+                Nächsten So
+              </button>
+              <button type="button" @click="selectToday" class="bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 px-2 py-1 rounded-lg transition-colors">
+                Heute
+              </button>
+            </div>
+
+            <!-- Day Headers -->
+            <div class="grid grid-cols-7 gap-1 text-center text-[10px] font-semibold text-gray-400 pt-2">
+              <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span class="text-amber-400 font-bold">So</span>
+            </div>
+
+            <!-- Calendar Days Grid -->
+            <div class="grid grid-cols-7 gap-1 text-center">
+              <button
+                v-for="(day, dIdx) in calendarDays"
+                :key="dIdx"
+                type="button"
+                :disabled="!day.isCurrentMonth"
+                @click="selectCalendarDate(day.dateStr)"
+                class="h-8 w-full flex items-center justify-center rounded-xl text-xs font-medium transition-all"
+                :class="[
+                  !day.isCurrentMonth ? 'opacity-20 cursor-not-allowed' : 'hover:bg-amber-500/20 cursor-pointer',
+                  selectedCalendarDate === day.dateStr ? 'bg-amber-500 text-black font-bold shadow-lg shadow-amber-500/20' : '',
+                  selectedCalendarDate !== day.dateStr && day.isSunday ? 'border border-amber-500/40 text-amber-300 font-semibold' : '',
+                  selectedCalendarDate !== day.dateStr && day.isToday ? 'bg-indigo-600/40 text-indigo-200 border border-indigo-500/50' : '',
+                  selectedCalendarDate !== day.dateStr && !day.isSunday && !day.isToday && day.isCurrentMonth ? 'text-gray-200 bg-white/5' : ''
+                ]"
+              >
+                {{ day.dayNumber }}
+              </button>
+            </div>
+
+            <!-- Time Picker -->
+            <div class="flex items-center justify-between border-t border-white/10 pt-3 mt-1">
+              <span class="text-xs text-gray-400 font-medium">Uhrzeit wählen:</span>
+              <div class="flex items-center gap-2">
+                <select 
+                  v-model="selectedTime"
+                  @change="updateScheduledTimeFromCalendar"
+                  class="bg-slate-900 border border-white/10 text-amber-400 rounded-lg text-xs font-semibold px-2 py-1 focus:outline-none"
+                >
+                  <option value="09:00">09:00 Uhr (Mette)</option>
+                  <option value="09:30">09:30 Uhr (Orthros)</option>
+                  <option value="10:00">10:00 Uhr (Liturgie)</option>
+                  <option value="17:00">17:00 Uhr (Vesper)</option>
+                  <option value="18:00">18:00 Uhr (Abendgottesdienst)</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           <!-- Languages -->
@@ -456,7 +526,7 @@ export default {
       autoplay: localStorage.getItem('autoplay') === 'true',
       pollingInterval: null,
 
-      // Priest Panel
+      // Priest Panel & Scheduling
       showSermonEditor: false,
       sermonText: '',
       savingSermon: false,
@@ -467,6 +537,15 @@ export default {
       newServiceTemplateId: '',
       newServiceDate: '',
       newServiceLanguages: ['de'],
+
+      // Smartphone Calendar Widget
+      calendarYear: new Date().getFullYear(),
+      calendarMonth: new Date().getMonth(),
+      selectedCalendarDate: '',
+      selectedTime: '10:00',
+
+      // Drag & Drop Reordering
+      draggedIndex: null,
     }
   },
   computed: {
@@ -482,6 +561,51 @@ export default {
     },
     sortedServices() {
       return [...this.servicesList].sort((a, b) => new Date(b.scheduled_time) - new Date(a.scheduled_time));
+    },
+    calendarMonthName() {
+      const months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+      return months[this.calendarMonth];
+    },
+    calendarDays() {
+      const days = [];
+      const firstDay = new Date(this.calendarYear, this.calendarMonth, 1);
+      const lastDay = new Date(this.calendarYear, this.calendarMonth + 1, 0);
+      
+      // Monday = 0..Sunday = 6
+      let startDayOfWeek = (firstDay.getDay() + 6) % 7;
+      
+      // Fill preceding days
+      const prevMonthLastDay = new Date(this.calendarYear, this.calendarMonth, 0).getDate();
+      for (let i = startDayOfWeek - 1; i >= 0; i--) {
+        days.push({
+          dayNumber: prevMonthLastDay - i,
+          isCurrentMonth: false,
+          isSunday: false,
+          isToday: false,
+          dateStr: ''
+        });
+      }
+      
+      // Current month days
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${(today.getMonth()+1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
+      
+      for (let d = 1; d <= lastDay.getDate(); d++) {
+        const dateObj = new Date(this.calendarYear, this.calendarMonth, d);
+        const isSunday = dateObj.getDay() === 0;
+        const monthStr = (this.calendarMonth + 1).toString().padStart(2, '0');
+        const dayStr = d.toString().padStart(2, '0');
+        const fullStr = `${this.calendarYear}-${monthStr}-${dayStr}`;
+        
+        days.push({
+          dayNumber: d,
+          isCurrentMonth: true,
+          isSunday,
+          isToday: fullStr === todayStr,
+          dateStr: fullStr
+        });
+      }
+      return days;
     }
   },
   async mounted() {
@@ -619,7 +743,7 @@ export default {
         this.serviceDate = `${dateObj.toLocaleDateString("de-DE", {weekday:"long", day:"numeric", month:"long", year:"numeric"})} um ${dateObj.toLocaleTimeString("de-DE", {hour:"2-digit", minute:"2-digit"})}`;
         
         this.activeSectionKey = data.service.current_section_key;
-        this.liturgySections = data.template.structure.sections;
+        this.liturgySections = (data.structure && data.structure.sections) ? data.structure.sections : data.template.structure.sections;
         this.sourcesBibliography = data.sources_bibliography || {};
 
         // Build flat array of items to render
@@ -660,18 +784,115 @@ export default {
       if (this.templatesList.length === 0) {
         this.loadTemplates();
       }
-      // Pre-fill date to next Sunday at 09:30
-      const nextSunday = new Date();
-      nextSunday.setDate(nextSunday.getDate() + (7 - nextSunday.getDay()) % 7);
-      nextSunday.setHours(9, 30, 0, 0);
-      
-      const pad = (n) => n.toString().padStart(2, '0');
-      this.newServiceDate = `${nextSunday.getFullYear()}-${pad(nextSunday.getMonth()+1)}-${pad(nextSunday.getDate())}T${pad(nextSunday.getHours())}:${pad(nextSunday.getMinutes())}`;
-      
+      this.selectThisSunday();
       if (this.templatesList.length > 0) {
         this.newServiceTemplateId = this.templatesList[0].id;
       }
       this.showScheduleModal = true;
+    },
+    prevMonth() {
+      if (this.calendarMonth === 0) {
+        this.calendarMonth = 11;
+        this.calendarYear--;
+      } else {
+        this.calendarMonth--;
+      }
+    },
+    nextMonth() {
+      if (this.calendarMonth === 11) {
+        this.calendarMonth = 0;
+        this.calendarYear++;
+      } else {
+        this.calendarMonth++;
+      }
+    },
+    selectCalendarDate(dateStr) {
+      if (!dateStr) return;
+      this.selectedCalendarDate = dateStr;
+      this.updateScheduledTimeFromCalendar();
+    },
+    selectThisSunday() {
+      const now = new Date();
+      const diff = (7 - now.getDay()) % 7;
+      const target = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diff);
+      this.calendarYear = target.getFullYear();
+      this.calendarMonth = target.getMonth();
+      const mStr = (target.getMonth() + 1).toString().padStart(2, '0');
+      const dStr = target.getDate().toString().padStart(2, '0');
+      this.selectedCalendarDate = `${target.getFullYear()}-${mStr}-${dStr}`;
+      this.updateScheduledTimeFromCalendar();
+    },
+    selectNextSunday() {
+      const now = new Date();
+      let diff = (7 - now.getDay()) % 7;
+      if (diff === 0) diff = 7;
+      const target = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diff + 7);
+      this.calendarYear = target.getFullYear();
+      this.calendarMonth = target.getMonth();
+      const mStr = (target.getMonth() + 1).toString().padStart(2, '0');
+      const dStr = target.getDate().toString().padStart(2, '0');
+      this.selectedCalendarDate = `${target.getFullYear()}-${mStr}-${dStr}`;
+      this.updateScheduledTimeFromCalendar();
+    },
+    selectToday() {
+      const now = new Date();
+      this.calendarYear = now.getFullYear();
+      this.calendarMonth = now.getMonth();
+      const mStr = (now.getMonth() + 1).toString().padStart(2, '0');
+      const dStr = now.getDate().toString().padStart(2, '0');
+      this.selectedCalendarDate = `${now.getFullYear()}-${mStr}-${dStr}`;
+      this.updateScheduledTimeFromCalendar();
+    },
+    updateScheduledTimeFromCalendar() {
+      this.newServiceDate = `${this.selectedCalendarDate}T${this.selectedTime}`;
+    },
+    onDragStart(event, index) {
+      this.draggedIndex = index;
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', index.toString());
+      }
+    },
+    onDrop(event, targetIndex) {
+      if (this.draggedIndex === null || this.draggedIndex === targetIndex) return;
+      const itemToMove = this.listItems.splice(this.draggedIndex, 1)[0];
+      this.listItems.splice(targetIndex, 0, itemToMove);
+      this.draggedIndex = null;
+      this.persistReorderedSections();
+    },
+    moveItemUp(idx) {
+      if (idx <= 0) return;
+      const item = this.listItems.splice(idx, 1)[0];
+      this.listItems.splice(idx - 1, 0, item);
+      this.persistReorderedSections();
+    },
+    moveItemDown(idx) {
+      if (idx >= this.listItems.length - 1) return;
+      const item = this.listItems.splice(idx, 1)[0];
+      this.listItems.splice(idx + 1, 0, item);
+      this.persistReorderedSections();
+    },
+    async persistReorderedSections() {
+      if (!this.serviceId) return;
+      try {
+        const custom_structure = {
+          name: this.serviceName || "Gottesdienst",
+          sections: this.listItems.map(item => ({
+            section_key: item.key,
+            text_keys: [item.key]
+          }))
+        };
+        await fetch(`/api/v1/liturgy/services/${this.serviceId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ custom_structure })
+        });
+      } catch (err) {
+        console.error("Failed to persist section reordering:", err);
+      }
     },
     async loadTemplates() {
       try {

@@ -79,6 +79,7 @@ class LiturgicalService(SQLModel, table=True):
     status: str = Field(default="draft")  # draft, active, completed
     current_section_key: Optional[str] = None
     active_languages: List[str] = Field(default=[], sa_column=Column(JSON))
+    custom_structure: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON))
 
     # Relationships
     community: Community = Relationship(back_populates="services")

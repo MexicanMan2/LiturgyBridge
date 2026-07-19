@@ -284,23 +284,6 @@ def seed_database():
         resolve_scripture_passage("scripture.epistle.Romans 12:1-10", session)
         resolve_scripture_passage("scripture.gospel.Matthew 14:1-15", session)
 
-        # 4. Update the LiturgicalTemplate structure tree with the 32 sequential parts
-        template = session.exec(
-            select(LiturgicalTemplate).where(LiturgicalTemplate.name == "Göttliche Liturgie des Hl. Johannes Chrysostomus")
-        ).first()
-        
-        if not template:
-            template = LiturgicalTemplate(
-                id=uuid.UUID("a9fb5917-a068-4592-80de-df619280d922"),
-                name="Göttliche Liturgie des Hl. Johannes Chrysostomus",
-                tradition="byzantine",
-                structure={},
-                is_shared=True
-            )
-            session.add(template)
-            session.commit()
-            session.refresh(template)
-
         complete_structure = {
             "name": "Göttliche Liturgie des Hl. Johannes Chrysostomus",
             "sections": [
@@ -338,7 +321,183 @@ def seed_database():
                 {"section_key": "part_2.dismissal", "text_keys": ["liturgy.dismissal"]}
             ]
         }
-        
+
+        # 4. Create and update the 8 official liturgical templates
+        templates_config = [
+            {
+                "id": uuid.UUID("a9fb5917-a068-4592-80de-df619280d922"),
+                "name": "Göttliche Liturgie des Hl. Johannes Chrysostomus",
+                "tradition": "byzantine",
+                "structure": complete_structure
+            },
+            {
+                "id": uuid.UUID("b1fb5917-a068-4592-80de-df619280d923"),
+                "name": "Göttliche Liturgie des Hl. Basilius des Großen",
+                "tradition": "byzantine",
+                "structure": {
+                    "name": "Göttliche Liturgie des Hl. Basilius des Großen",
+                    "sections": [
+                        {"section_key": "part_1.blessing", "text_keys": ["liturgy.opening_blessing"]},
+                        {"section_key": "part_1.great_litany", "text_keys": ["liturgy.great_litany.lord_have_mercy"]},
+                        {"section_key": "part_1.first_antiphon", "text_keys": ["liturgy.first_antiphon.refrain"]},
+                        {"section_key": "part_1.small_litany_1", "text_keys": ["liturgy.small_litany_1"]},
+                        {"section_key": "part_1.second_antiphon", "text_keys": ["liturgy.second_antiphon.refrain"]},
+                        {"section_key": "part_1.third_antiphon", "text_keys": ["liturgy.third_antiphon.beatitudes"]},
+                        {"section_key": "part_1.small_entrance", "text_keys": ["liturgy.small_entrance.verse"]},
+                        {"section_key": "part_1.troparion", "text_keys": ["dynamic.tonal_troparion"]},
+                        {"section_key": "part_1.trisagion", "text_keys": ["liturgy.trisagion.main"]},
+                        {"section_key": "part_1.prokeimenon", "text_keys": ["dynamic.tonal_prokeimenon"]},
+                        {"section_key": "part_1.readings_epistle", "text_keys": ["dynamic.epistle_reading"]},
+                        {"section_key": "part_1.alleluia", "text_keys": ["liturgy.alleluia_ref"]},
+                        {"section_key": "part_1.readings_gospel", "text_keys": ["dynamic.gospel_reading"]},
+                        {"section_key": "part_1.sermon", "text_keys": ["liturgy.sermon_placeholder"]},
+                        {"section_key": "part_2.cherubic_hymn", "text_keys": ["liturgy.cherubic_hymn.main"]},
+                        {"section_key": "part_2.litany_supplication", "text_keys": ["liturgy.litany_supplication"]},
+                        {"section_key": "part_2.creed", "text_keys": ["liturgy.creed.main"]},
+                        {"section_key": "part_2.anaphora_dialogue", "text_keys": ["liturgy.anaphora.dialogue"]},
+                        {"section_key": "part_2.anaphora_sanctus", "text_keys": ["liturgy.anaphora.sanctus"]},
+                        {"section_key": "part_2.anaphora_institution", "text_keys": ["liturgy.anaphora.institution"]},
+                        {"section_key": "part_2.anaphora_epiklesis", "text_keys": ["liturgy.anaphora.epiklesis"]},
+                        {"section_key": "part_2.hymn_to_theotokos", "text_keys": ["liturgy.hymn_to_theotokos"]},
+                        {"section_key": "part_2.lords_prayer", "text_keys": ["liturgy.lords_prayer.main"]},
+                        {"section_key": "part_2.communion_elevation", "text_keys": ["liturgy.communion.elevation"]},
+                        {"section_key": "part_2.communion_response", "text_keys": ["liturgy.communion.response"]},
+                        {"section_key": "part_2.communion_koinonikon", "text_keys": ["liturgy.communion.koinonikon"]},
+                        {"section_key": "part_2.communion_invitation", "text_keys": ["liturgy.communion.invitation"]},
+                        {"section_key": "part_2.dismissal", "text_keys": ["liturgy.dismissal"]}
+                    ]
+                }
+            },
+            {
+                "id": uuid.UUID("c2fb5917-a068-4592-80de-df619280d924"),
+                "name": "Liturgie der Vorgeheiligten Gaben",
+                "tradition": "byzantine",
+                "structure": {
+                    "name": "Liturgie der Vorgeheiligten Gaben",
+                    "sections": [
+                        {"section_key": "part_1.blessing", "text_keys": ["liturgy.opening_blessing"]},
+                        {"section_key": "part_1.great_litany", "text_keys": ["liturgy.great_litany.lord_have_mercy"]},
+                        {"section_key": "part_1.small_litany_1", "text_keys": ["liturgy.small_litany_1"]},
+                        {"section_key": "part_1.readings_gospel", "text_keys": ["dynamic.gospel_reading"]},
+                        {"section_key": "part_2.litany_supplication", "text_keys": ["liturgy.litany_supplication"]},
+                        {"section_key": "part_2.lords_prayer", "text_keys": ["liturgy.lords_prayer.main"]},
+                        {"section_key": "part_2.communion_elevation", "text_keys": ["liturgy.communion.elevation"]},
+                        {"section_key": "part_2.communion_response", "text_keys": ["liturgy.communion.response"]},
+                        {"section_key": "part_2.prayer_ambo", "text_keys": ["liturgy.prayer_ambo"]},
+                        {"section_key": "part_2.dismissal", "text_keys": ["liturgy.dismissal"]}
+                    ]
+                }
+            },
+            {
+                "id": uuid.UUID("d3fb5917-a068-4592-80de-df619280d925"),
+                "name": "Heilige Taufe & Myronsalbung (Sakrament)",
+                "tradition": "byzantine",
+                "structure": {
+                    "name": "Heilige Taufe & Myronsalbung",
+                    "sections": [
+                        {"section_key": "part_1.blessing", "text_keys": ["liturgy.opening_blessing"]},
+                        {"section_key": "part_1.great_litany", "text_keys": ["liturgy.great_litany.lord_have_mercy"]},
+                        {"section_key": "part_1.readings_epistle", "text_keys": ["dynamic.epistle_reading"]},
+                        {"section_key": "part_1.readings_gospel", "text_keys": ["dynamic.gospel_reading"]},
+                        {"section_key": "part_2.lords_prayer", "text_keys": ["liturgy.lords_prayer.main"]},
+                        {"section_key": "part_2.dismissal", "text_keys": ["liturgy.dismissal"]}
+                    ]
+                }
+            },
+            {
+                "id": uuid.UUID("e4fb5917-a068-4592-80de-df619280d926"),
+                "name": "Heilige Eheschließung / Krönung (Sakrament)",
+                "tradition": "byzantine",
+                "structure": {
+                    "name": "Heilige Eheschließung / Krönung",
+                    "sections": [
+                        {"section_key": "part_1.blessing", "text_keys": ["liturgy.opening_blessing"]},
+                        {"section_key": "part_1.great_litany", "text_keys": ["liturgy.great_litany.lord_have_mercy"]},
+                        {"section_key": "part_1.prokeimenon", "text_keys": ["dynamic.tonal_prokeimenon"]},
+                        {"section_key": "part_1.readings_epistle", "text_keys": ["dynamic.epistle_reading"]},
+                        {"section_key": "part_1.readings_gospel", "text_keys": ["dynamic.gospel_reading"]},
+                        {"section_key": "part_2.lords_prayer", "text_keys": ["liturgy.lords_prayer.main"]},
+                        {"section_key": "part_2.dismissal", "text_keys": ["liturgy.dismissal"]}
+                    ]
+                }
+            },
+            {
+                "id": uuid.UUID("f5fb5917-a068-4592-80de-df619280d927"),
+                "name": "Große Vesper (Abendgottesdienst)",
+                "tradition": "byzantine",
+                "structure": {
+                    "name": "Große Vesper",
+                    "sections": [
+                        {"section_key": "part_1.blessing", "text_keys": ["liturgy.opening_blessing"]},
+                        {"section_key": "part_1.great_litany", "text_keys": ["liturgy.great_litany.lord_have_mercy"]},
+                        {"section_key": "part_1.prokeimenon", "text_keys": ["dynamic.tonal_prokeimenon"]},
+                        {"section_key": "part_2.litany_supplication", "text_keys": ["liturgy.litany_supplication"]},
+                        {"section_key": "part_2.dismissal", "text_keys": ["liturgy.dismissal"]}
+                    ]
+                }
+            },
+            {
+                "id": uuid.UUID("a6fb5917-a068-4592-80de-df619280d928"),
+                "name": "Orthros / Mette (Morgengottesdienst)",
+                "tradition": "byzantine",
+                "structure": {
+                    "name": "Orthros / Mette",
+                    "sections": [
+                        {"section_key": "part_1.blessing", "text_keys": ["liturgy.opening_blessing"]},
+                        {"section_key": "part_1.great_litany", "text_keys": ["liturgy.great_litany.lord_have_mercy"]},
+                        {"section_key": "part_1.troparion", "text_keys": ["dynamic.tonal_troparion"]},
+                        {"section_key": "part_1.readings_gospel", "text_keys": ["dynamic.gospel_reading"]},
+                        {"section_key": "part_2.dismissal", "text_keys": ["liturgy.dismissal"]}
+                    ]
+                }
+            },
+            {
+                "id": uuid.UUID("b7fb5917-a068-4592-80de-df619280d929"),
+                "name": "Pascha-Mette & Osterliturgie",
+                "tradition": "byzantine",
+                "structure": {
+                    "name": "Pascha-Mette & Osterliturgie",
+                    "sections": [
+                        {"section_key": "part_1.blessing", "text_keys": ["liturgy.opening_blessing"]},
+                        {"section_key": "part_1.great_litany", "text_keys": ["liturgy.great_litany.lord_have_mercy"]},
+                        {"section_key": "part_1.first_antiphon", "text_keys": ["liturgy.first_antiphon.refrain"]},
+                        {"section_key": "part_1.second_antiphon", "text_keys": ["liturgy.second_antiphon.refrain"]},
+                        {"section_key": "part_1.small_entrance", "text_keys": ["liturgy.small_entrance.verse"]},
+                        {"section_key": "part_1.readings_epistle", "text_keys": ["dynamic.epistle_reading"]},
+                        {"section_key": "part_1.alleluia", "text_keys": ["liturgy.alleluia_ref"]},
+                        {"section_key": "part_1.readings_gospel", "text_keys": ["dynamic.gospel_reading"]},
+                        {"section_key": "part_2.cherubic_hymn", "text_keys": ["liturgy.cherubic_hymn.main"]},
+                        {"section_key": "part_2.creed", "text_keys": ["liturgy.creed.main"]},
+                        {"section_key": "part_2.anaphora_dialogue", "text_keys": ["liturgy.anaphora.dialogue"]},
+                        {"section_key": "part_2.anaphora_epiklesis", "text_keys": ["liturgy.anaphora.epiklesis"]},
+                        {"section_key": "part_2.hymn_to_theotokos", "text_keys": ["liturgy.hymn_to_theotokos"]},
+                        {"section_key": "part_2.lords_prayer", "text_keys": ["liturgy.lords_prayer.main"]},
+                        {"section_key": "part_2.communion_elevation", "text_keys": ["liturgy.communion.elevation"]},
+                        {"section_key": "part_2.communion_invitation", "text_keys": ["liturgy.communion.invitation"]},
+                        {"section_key": "part_2.dismissal", "text_keys": ["liturgy.dismissal"]}
+                    ]
+                }
+            }
+        ]
+
+        for cfg in templates_config:
+            t = session.get(LiturgicalTemplate, cfg["id"])
+            if not t:
+                t = LiturgicalTemplate(
+                    id=cfg["id"],
+                    name=cfg["name"],
+                    tradition=cfg["tradition"],
+                    structure=cfg["structure"],
+                    is_shared=True
+                )
+                session.add(t)
+            else:
+                t.structure = cfg["structure"]
+                session.add(t)
+            session.commit()
+            session.refresh(t)
+        print("LiturgicalTemplate structure fully updated with 32 parts.")
+
         # Seed AudioTracks expected by tests
         print("Seeding AudioTracks (Choral recordings & fallback TTS)...")
         default_audios = [
@@ -349,49 +508,44 @@ def seed_database():
         ]
         
         for key, desc in default_audios:
-            at = AudioTrack(
-                text_key=key,
-                language="de",
-                audio_url="placeholder",
-                is_system_default=True,
-                is_shared=True,
-                description=desc,
-                audio_data=f"MOCK_DEFAULT_AUDIO_DATA_FOR_{key}".encode("utf-8")
-            )
-            session.add(at)
-            session.commit()
-            session.refresh(at)
-            
-            # Point URL to the dynamic database stream route
-            at.audio_url = f"/api/v1/liturgy/audio-tracks/{at.id}/stream"
-            session.add(at)
-            session.commit()
+            already = session.exec(select(AudioTrack).where(AudioTrack.text_key == key, AudioTrack.is_system_default == True)).first()
+            if not already:
+                at = AudioTrack(
+                    text_key=key,
+                    language="de",
+                    audio_url="placeholder",
+                    is_system_default=True,
+                    is_shared=True,
+                    description=desc,
+                    audio_data=f"MOCK_DEFAULT_AUDIO_DATA_FOR_{key}".encode("utf-8")
+                )
+                session.add(at)
+                session.commit()
+                session.refresh(at)
+                at.audio_url = f"/api/v1/liturgy/audio-tracks/{at.id}/stream"
+                session.add(at)
+                session.commit()
 
         # Seed a community-shared choir recording of the Cherubic Hymn
-        choir_hymn = AudioTrack(
-            text_key="liturgy.cherubic_hymn.main",
-            language="de",
-            audio_url="placeholder",
-            community_id=comm.id,
-            is_shared=True,
-            is_system_default=False,
-            description="Byzantinischer Tonsatz - Gesungen vom Chor der St. Nikolaus Kathedrale Berlin (Deutsch)",
-            audio_data=b"MOCK_ST_NICHOLAS_CHOIR_RECORDING_BYTES_MP3"
-        )
-        session.add(choir_hymn)
-        session.commit()
-        session.refresh(choir_hymn)
-        
-        # Point URL to dynamic database stream route
-        choir_hymn.audio_url = f"/api/v1/liturgy/audio-tracks/{choir_hymn.id}/stream"
-        session.add(choir_hymn)
-        session.commit()
+        already_choir = session.exec(select(AudioTrack).where(AudioTrack.text_key == "liturgy.cherubic_hymn.main", AudioTrack.community_id == comm.id)).first()
+        if not already_choir:
+            choir_hymn = AudioTrack(
+                text_key="liturgy.cherubic_hymn.main",
+                language="de",
+                audio_url="placeholder",
+                community_id=comm.id,
+                is_shared=True,
+                is_system_default=False,
+                description="Byzantinischer Tonsatz - Gesungen vom Chor der St. Nikolaus Kathedrale Berlin (Deutsch)",
+                audio_data=b"MOCK_ST_NICHOLAS_CHOIR_RECORDING_BYTES_MP3"
+            )
+            session.add(choir_hymn)
+            session.commit()
+            session.refresh(choir_hymn)
+            choir_hymn.audio_url = f"/api/v1/liturgy/audio-tracks/{choir_hymn.id}/stream"
+            session.add(choir_hymn)
+            session.commit()
         print("AudioTracks seeded in database.")
-        
-        template.structure = complete_structure
-        session.add(template)
-        session.commit()
-        print("LiturgicalTemplate structure fully updated with 32 parts.")
         print("=" * 80)
         print("SEEDING COMPLETE!")
         print("=" * 80)

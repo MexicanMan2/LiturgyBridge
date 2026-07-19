@@ -64,6 +64,7 @@ class ServiceUpdate(BaseModel):
     status: Optional[str] = None
     current_section_key: Optional[str] = None
     active_languages: Optional[List[str]] = None
+    custom_structure: Optional[Dict[str, Any]] = None
 
 class TranslationSubmit(BaseModel):
     text_key: str
@@ -445,7 +446,8 @@ def get_service_details(
         sermon_exists = session.get(TextItem, sermon_key) is not None
         resolved_sermon_key = sermon_key if sermon_exists else "liturgy.sermon_placeholder"
         
-        raw_keys = extract_text_keys(template.structure)
+        structure_to_use = service.custom_structure if service.custom_structure else (template.structure if template else {})
+        raw_keys = extract_text_keys(structure_to_use)
         
         # Define mappings from placeholder keys to actual resolved database keys
         placeholder_mapping = {
@@ -571,6 +573,7 @@ def get_service_details(
     return {
         "service": service,
         "template": template,
+        "structure": structure_to_use,
         "texts": resolved_texts,
         "sources_bibliography": BIBLIOGRAPHY
     }
